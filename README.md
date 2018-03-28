@@ -1,0 +1,9 @@
+# Gudrun
+
+This robot will be a variant of the [Donkey car](http://www.donkeycar.com/), probably using the [recommended chassis](https://hobbyking.com/en_us/trooper-pro-4x4-1-10-brushless-sct-arr.html). However, instead of controlling it with a Raspberry Pi, I'll use the computer I built last year(mini-ITX, I think)  as a work desktop, which was superseded by the machine Richard sent to me. I might replace the motherboard with a slim-mini-ITX, a standard which includes a 19VDC power jack. Otherwise I'd need something like this to provide motherboard power. 
+
+Either way, I'll probably need to use a boost converter (which I already have), and I think it should draw about 130W max (according to the estimate from pcpartpicker on the page where you select a power supply). This battery which is currently in Gunnar should be able to handle 100 amps according to this calculator, so I think this should be fine for about an hour of use--certainly a half-hour. 
+
+In a later iteration, I'd use a more power-efficient robotics-focused computer, but, for this build, I want to minimize the specialness of the computer as much as possible, so that everything is just standard Ubuntu. (The Nvidia TX2, like the Raspberry Pi, runs a custom linux with an ARM CPU, instead of a "normal" x86_64 CPU, meaning installing software is often harder.)
+
+[Gudrun](https://en.wikipedia.org/wiki/Gudrun) will be the successor to two previous builds of mine, which I named Hogni and Gunnar, all three of whom were mythologically siblings. (Also, note to self, if I want to continue this naming scheme, there's a [good list at the bottom](https://en.wikipedia.org/wiki/Gudrun#Family_relations) of that article.)
