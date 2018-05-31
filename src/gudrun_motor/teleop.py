@@ -168,10 +168,18 @@ def keyboard_teleop():
 
 def mouse_teleop():
     import pygame
+
     pygame.init()
-    RES_X = 800
-    RES_Y = 600
-    screen = pygame.display.set_mode((RES_X, RES_Y))
+    RES_X = 320 / 2
+    RES_Y = 240 / 2
+    print(RES_X, RES_Y)
+    display = pygame.display.set_mode((RES_X, RES_Y))
+
+    import pygame.camera
+    pygame.camera.init()
+    camera = pygame.camera.Camera('/dev/video0', (RES_X, RES_Y))
+    camera.start()
+    screen = pygame.surface.Surface((RES_X, RES_Y), 0, display)
 
     pygame.event.set_grab(True)
 
@@ -204,6 +212,10 @@ def mouse_teleop():
     exit = False
     print('q to exit')
     while True:
+        screen = camera.get_image(screen)
+        display.blit(screen, (0, 0))
+        pygame.display.flip()
+
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
                 if event.key == ord(" "):
