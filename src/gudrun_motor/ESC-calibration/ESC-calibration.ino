@@ -29,7 +29,7 @@ Servo mot;
 void setup() {
     Serial.begin(9600);
     
-    mot.attach(4, MIN_PULSE_ACTUAL, MAX_PULSE_ACTUAL);
+    mot.attach(5, MIN_PULSE_ACTUAL, MAX_PULSE_ACTUAL);
     
     displayInstructions();
 }
