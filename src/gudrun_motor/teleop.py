@@ -5,6 +5,8 @@ import time
 
 import sys, termios, tty
 
+DEBUG_DUMMY = False
+
 
 def _set_servo(num, milliseconds):
     cmd = 'UscCmd --servo %d,%d' % (num, 4.0 * milliseconds)
@@ -13,9 +15,10 @@ def _set_servo(num, milliseconds):
 
 class Axis(object):
 
-    def __init__(self, pin, zero_point=1496, low_point=992, high_point=2000):
+    def __init__(self, pin, zero_point=1496, low_point=992, high_point=2000, dummy=False):
         self._pin = pin
         self._ms_points = low_point, zero_point, high_point
+        self._dummy = dummy
         self.fraction = 0
 
     @property
@@ -30,14 +33,18 @@ class Axis(object):
             ms = fraction * (h - m) + m
         else:
             ms = fraction * (m - l) + m
-        _set_servo(self._pin, ms)
+        if not self._dummy:
+            _set_servo(self._pin, ms)
+        else:
+            print('(Set servo %d to %s ms)' % (self._pin, ms))
 
 
 class Car(object):
 
-    def __init__(self, steering_pin=0, throttle_pin=1):
-        self._steering_axis = Axis(steering_pin)
-        self._throttle_axis = Axis(throttle_pin)
+    def __init__(self, steering_pin=0, throttle_pin=1, dummy=DEBUG_DUMMY):
+        self.MAX_THROTTLE_ABS = .3
+        self._steering_axis = Axis(steering_pin, dummy=dummy)
+        self._throttle_axis = Axis(throttle_pin, dummy=dummy)
         self._reversing = False
         self.stop()
         self.center()
@@ -62,6 +69,9 @@ class Car(object):
 
     @throttle.setter
     def throttle(self, fraction):
+
+        fraction = min(max(fraction, -self.MAX_THROTTLE_ABS), self.MAX_THROTTLE_ABS)
+
         self._throttle = fraction
         if fraction < 0:
             self.switch_to_reverse()
@@ -154,5 +164,61 @@ def keyboard_teleop():
         # else:
         #     print('Got unknown char "%s".' % char)
 
+
+
+def mouse_teleop():
+    import pygame
+    pygame.init()
+    RES_X = 400
+    RES_Y = 300
+    screen = pygame.display.set_mode((RES_X, RES_Y))
+
+    drivable = False
+    last_speed_update_time = time.time()
+    speed_update_period = .1
+
+    car = Car()
+
+    exit = False
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == ord(" "):
+                    print('Setting drivable to', not drivable)
+                    if drivable:
+                        car.stop()
+                        car.center()
+                    else:
+                        pygame.mouse.set_pos(RES_X/2, RES_Y/2)
+                    drivable = not drivable
+                elif event.key == ord('q'):
+                    exit = True
+                    break
+                else:
+                    try:
+                        print('Got key %s (%s).' % (event.key, chr(event.key)))
+                    except ValueError:
+                        print('Got non-ASCII keycode %s.' % event.key)
+
+            elif event.type == pygame.MOUSEMOTION:
+                if drivable:
+                    t = time.time()
+                    elapsed = t - last_speed_update_time 
+                    if elapsed > speed_update_period:
+                        last_speed_update_time = t
+                        c, r = event.pos
+                        car.steering = float(c) / RES_X * 2 - 1
+                        car.throttle = -(float(r) / RES_Y * 2 - 1)
+                        print('Set steering to %s; throttle to %s.' % (car.steering, car.throttle))
+                    else:
+                        pass
+                        #print('Waiting %s seconds longer for speed change.' % (speed_update_period - elapsed,))
+
+            elif event.type == pygame.QUIT:
+                exit = True
+                break
+        if exit:
+            break
+
 if __name__ == '__main__':
-    keyboard_teleop()
+    mouse_teleop()
