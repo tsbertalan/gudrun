@@ -166,32 +166,15 @@ def keyboard_teleop():
 
 
 import multiprocessing
-def _monitor_ping(server, parent_pid, ping_timeout=1, kill_parent=False):
-    sys.stdout = open('child.out', 'w', buffering=0)
-    sys.stderr = open('child.err', 'w', buffering=0)
-    print('Heartbeat PID is %s.' % getpid())
-    system('mkdir -p tmp/')
+def _monitor_ping(server, ping_timeout=1):
     car = Car()
     while True:
         timeout = '' if ping_timeout is None else '-w %d -W %d' % (ping_timeout, ping_timeout)
         cmd = 'ping %s -c 1 %s >/dev/null 2>&1' % (server, timeout)
-        # cmd = 'touch tmp/thing 2>/dev/null'
         if system(cmd):
             print('Heartbeat skipped; stopping vehicle.')
-            # Send a keyboard intterupt so that motors can stop.
-            # Send an escalating sequence:
             car.stop()
             car.center()
-            if kill_parent:
-                for signal, count in [(2, 3), (15, 1), (9, 1)]:
-                    for _ in range(count):
-                        cmd = 'kill -s %d %s 2>/dev/null' % (signal, parent_pid)
-                        print('$ %s' % cmd)
-                        system(cmd)
-                        time.sleep(2.0)
-                car.stop()
-                car.center()
-                break
 
 
 class Heartbeat(object):
@@ -200,8 +183,7 @@ class Heartbeat(object):
 
         self.server = server
         pid = getpid()
-        print('PID is %s.' % pid)
-        self.p = multiprocessing.Process(target=_monitor_ping, args=(server, pid))
+        self.p = multiprocessing.Process(target=_monitor_ping, args=(server,))
         self.p.start()
 
     def __del__(self):
@@ -216,13 +198,13 @@ def mouse_teleop():
     import pygame.camera
     from glob import glob
 
-    sys.stdout = open('teleop.out', 'w', buffering=0)
-    sys.stderr = open('teleop.err', 'w', buffering=0)
-
     pygame.init()
     RES_X = 320 / 2
     RES_Y = 240 / 2
-    print(RES_X, RES_Y)
+    speed_update_period = .1
+    input_heartbeat_period = 10
+    heartbeat = Heartbeat('sindri.vpn.tomsb.net')
+    
     display = pygame.display.set_mode((RES_X, RES_Y))
     pygame.camera.init()
     camera = pygame.camera.Camera(glob('/dev/video*')[-1], (RES_X, RES_Y))
@@ -234,9 +216,6 @@ def mouse_teleop():
     car = Car()
 
     last_speed_update_time = time.time()
-    speed_update_period = .1
-    input_heartbeat_period = 10
-    heartbeat = Heartbeat('sindri.vpn.tomsb.net')
 
     with open('teleop.log', 'w') as logfile:
 
@@ -249,6 +228,7 @@ def mouse_teleop():
                 ) + end
             )
             logfile.flush()
+            sys.stdout.flush()
             if not isinstance(args, tuple):
                 args = (args,)
             print(*args, end=end)
@@ -301,57 +281,50 @@ def mouse_teleop():
                 else:
                     last_speed_update_time = t
 
-            try:
-                for event in pygame.event.get():
-                    if event.type == pygame.KEYDOWN:
-                        if event.key == ord(" "):
-                            toggle_drivable(True)
-                        elif event.key == pygame.K_ESCAPE:
-                            toggle_drivable(True)
-                            pygame.event.set_grab(False)
+            for event in pygame.event.get():
+                if event.type == pygame.KEYDOWN:
+                    if event.key == ord(" "):
+                        toggle_drivable(True)
+                    elif event.key == pygame.K_ESCAPE:
+                        toggle_drivable(True)
+                        pygame.event.set_grab(False)
 
-                        elif event.key == ord('q') or event.key == pygame.K_ESCAPE:
-                            exit = True
-                        else:
-                            try:
-                                log('Got key %s (%s).' % (event.key, chr(event.key)))
-                            except ValueError:
-                                log('Got non-ASCII keycode %s.' % event.key)
-
-                    elif event.type == pygame.MOUSEBUTTONDOWN:
-                        if event.button == 1: # left button
-                            log('Locked mouse to window (Press esc to halt car and unlock).')
-                            pygame.event.set_grab(True)
-                        elif event.button == 2: # middle button
-                            toggle_drivable()
-                        elif event.button == 3: # right button
-                            toggle_drivable(True)
-                        elif event.button == 8: # web-back
-                            car.MAX_THROTTLE_ABS *= .9
-                            log('Max-abs throttle set to %s.' % car.MAX_THROTTLE_ABS)
-                        elif event.button == 9: # web-fwd
-                            car.MAX_THROTTLE_ABS *= 1.1
-                            log('Max-abs throttle set to %s.' % car.MAX_THROTTLE_ABS)
-                        # button 4 is scroll up; 5 is scroll down
-
-                    elif event.type == pygame.MOUSEMOTION:
-                        c, r = event.pos
-                        if toggle_drivable.drivable:
-                            t = time.time()
-                            elapsed = t - last_speed_update_time 
-                            if elapsed > speed_update_period:
-                                last_speed_update_time = t
-                                car.steering = float(c) / RES_X * 2 - 1
-                                car.throttle = -(float(r) / RES_Y * 2 - 1)
-
-                    elif event.type == pygame.QUIT:
+                    elif event.key == ord('q') or event.key == pygame.K_ESCAPE:
                         exit = True
+                    else:
+                        try:
+                            log('Got key %s (%s).' % (event.key, chr(event.key)))
+                        except ValueError:
+                            log('Got non-ASCII keycode %s.' % event.key)
 
-            except KeyboardInterrupt:
-                print('Caught KeyboardInterrupt; stopping.')
-                car.stop()
-                car.center()
-                exit = True
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 1: # left button
+                        log('Locked mouse to window (Press esc to halt car and unlock).')
+                        pygame.event.set_grab(True)
+                    elif event.button == 2: # middle button
+                        toggle_drivable()
+                    elif event.button == 3: # right button
+                        toggle_drivable(True)
+                    elif event.button == 8: # web-back
+                        car.MAX_THROTTLE_ABS *= .9
+                        log('Max-abs throttle set to %s.' % car.MAX_THROTTLE_ABS)
+                    elif event.button == 9: # web-fwd
+                        car.MAX_THROTTLE_ABS *= 1.1
+                        log('Max-abs throttle set to %s.' % car.MAX_THROTTLE_ABS)
+                    # button 4 is scroll up; 5 is scroll down
+
+                elif event.type == pygame.MOUSEMOTION:
+                    c, r = event.pos
+                    if toggle_drivable.drivable:
+                        t = time.time()
+                        elapsed = t - last_speed_update_time 
+                        if elapsed > speed_update_period:
+                            last_speed_update_time = t
+                            car.steering = float(c) / RES_X * 2 - 1
+                            car.throttle = -(float(r) / RES_Y * 2 - 1)
+
+                elif event.type == pygame.QUIT:
+                    exit = True
             
             if exit:
                 break
