@@ -169,29 +169,50 @@ def keyboard_teleop():
 def mouse_teleop():
     import pygame
     pygame.init()
-    RES_X = 400
-    RES_Y = 300
+    RES_X = 800
+    RES_Y = 600
     screen = pygame.display.set_mode((RES_X, RES_Y))
 
-    drivable = False
-    last_speed_update_time = time.time()
-    speed_update_period = .1
+    pygame.event.set_grab(True)
 
     car = Car()
 
+    class ToggleDrivable:
+        def __init__(self):
+            self.drivable = True
+            self()
+
+        def __call__(self, stop=None):
+            if stop:
+                self.drivable = True
+            if self.drivable:
+                print('Stopping car...', end=' ')
+                car.stop()
+                car.center()
+                print('Middle click to enable driving.')
+            else:
+                pygame.mouse.set_pos(RES_X/2, RES_Y/2)
+                pygame.event.set_grab(True)
+                print('Move mouse to drive car.')
+                print('Middle click or right click to disable.')
+            self.drivable = not self.drivable
+    toggle_drivable = ToggleDrivable()
+
+    last_speed_update_time = time.time()
+    speed_update_period = .1
+
     exit = False
+    print('q to exit')
     while True:
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
                 if event.key == ord(" "):
-                    print('Setting drivable to', not drivable)
-                    if drivable:
-                        car.stop()
-                        car.center()
-                    else:
-                        pygame.mouse.set_pos(RES_X/2, RES_Y/2)
-                    drivable = not drivable
-                elif event.key == ord('q'):
+                    toggle_drivable(True)
+                elif event.key == pygame.K_ESCAPE:
+                    toggle_drivable(True)
+                    pygame.event.set_grab(False)
+
+                elif event.key == ord('q') or event.key == pygame.K_ESCAPE:
                     exit = True
                     break
                 else:
@@ -200,19 +221,31 @@ def mouse_teleop():
                     except ValueError:
                         print('Got non-ASCII keycode %s.' % event.key)
 
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1: # left button
+                    print('Locked mouse to window (Press esc to halt car and unlock).')
+                    pygame.event.set_grab(True)
+                elif event.button == 2: # middle button
+                    toggle_drivable()
+                elif event.button == 3: # right button
+                    toggle_drivable(True)
+                elif event.button == 8: # web-back
+                    car.MAX_THROTTLE_ABS *= .9
+                    print('Max-abs throttle set to %s.' % car.MAX_THROTTLE_ABS)
+                elif event.button == 9: # web-fwd
+                    car.MAX_THROTTLE_ABS *= 1.1
+                    print('Max-abs throttle set to %s.' % car.MAX_THROTTLE_ABS)
+                # button 4 is scroll up; 5 is scroll down
+
             elif event.type == pygame.MOUSEMOTION:
-                if drivable:
+                c, r = event.pos
+                if toggle_drivable.drivable:
                     t = time.time()
                     elapsed = t - last_speed_update_time 
                     if elapsed > speed_update_period:
                         last_speed_update_time = t
-                        c, r = event.pos
                         car.steering = float(c) / RES_X * 2 - 1
                         car.throttle = -(float(r) / RES_Y * 2 - 1)
-                        print('Set steering to %s; throttle to %s.' % (car.steering, car.throttle))
-                    else:
-                        pass
-                        #print('Waiting %s seconds longer for speed change.' % (speed_update_period - elapsed,))
 
             elif event.type == pygame.QUIT:
                 exit = True
