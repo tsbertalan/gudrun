@@ -1,0 +1,112 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="gudrun">
+
+
+	<material name="black">
+		<color rgba=".05 .05 .05 1"/>
+	</material>
+
+	<xacro:property name="width" value="0.25"/>
+	<xacro:property name="length" value="0.5"/>
+	<xacro:property name="height" value="0.125"/>
+
+	<link name="base_link">
+		<visual>
+			<geometry>
+				<box size="${width} ${length} ${height}"/>
+			</geometry>
+		</visual>
+		<collision>
+			<geometry>
+				<box size="${width} ${length} ${height}"/>
+			</geometry>
+		</collision>
+		<inertial>
+			<mass value="3"/>
+			<inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
+		</inertial>
+	</link>
+
+	<xacro:property name="wheel_width" value="0.0625" />
+	<xacro:property name="wheel_radius" value="0.0625" />
+
+	<xacro:macro name="wheel" params="suffix *origin">
+		<link name="wheel_${suffix}">
+			<visual>
+				<geometry>
+					<cylinder length="${wheel_width}" radius="${wheel_radius}"/>
+				</geometry>
+				<material name="black"/>
+			</visual>
+			<collision>
+				<geometry>
+					<cylinder length="${wheel_width}" radius="${wheel_radius}"/>
+				</geometry>
+			</collision>
+			<inertial>
+				<mass value=".1"/>
+				<inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
+			</inertial>
+		</link>
+		<joint name="base_link_to_wheel_${suffix}" type="continuous">
+			<axis xyz="0 0 1" />
+			<parent link="base_link"/>
+			<child link="wheel_${suffix}"/>
+			<xacro:insert_block name="origin" />
+			<contact_coefficients mu="0.1" />
+		</joint>
+
+		<transmission name="${suffix}_trans">
+			<type>transmission_interface/SimpleTransmission</type>
+			<actuator name="${suffix}_motor">
+				<mechanicalReduction>1</mechanicalReduction>
+			</actuator>
+			<joint name="base_link_to_wheel_${suffix}">
+				<hardwareInterface>PositionJointInterface</hardwareInterface>
+			</joint>
+		</transmission>
+	</xacro:macro>
+
+	<xacro:wheel suffix="left_front">
+		<origin xyz="${-width/2-wheel_width/2} .2 -.07" rpy="0 1.57080 0"/>
+	</xacro:wheel>
+	<xacro:wheel suffix="right_front">
+		<origin xyz="${width/2+wheel_width/2} .2 -.07" rpy="0 1.57080 0"/>
+	</xacro:wheel>
+	<xacro:wheel suffix="left_rear">
+		<origin xyz="${-width/2-wheel_width/2} -.2 -.07" rpy="0 1.57080 0"/>
+	</xacro:wheel>
+	<xacro:wheel suffix="right_rear">
+		<origin xyz="${width/2+wheel_width/2} -.2 -.07" rpy="0 1.57080 0"/>
+	</xacro:wheel>
+
+	<link name="kinect">
+		<visual>
+			<geometry
+>				<box size="${width*1.1} .05 .1"/>
+			</geometry>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<box size="${width*1.5} 0.08 0.12"/>
+			</geometry>
+		</collision>
+		<inertial>
+			<mass value=".5"/>
+			<inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
+		</inertial>
+	</link>
+	<joint name="base_to_kinect" type="fixed" >
+		<parent link="base_link"/>
+		<child link="kinect"/>
+		<origin xyz="0 .125 .1"/>
+	</joint>
+
+<gazebo>
+	<plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+		<robotNamespace>/</robotNamespace>
+	</plugin>
+</gazebo>
+
+</robot>
