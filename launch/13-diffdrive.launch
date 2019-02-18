@@ -1,0 +1,26 @@
+<launch>
+  <arg name="model" default="$(find gudrun_sim)/urdf/gudrun.urdf.xacro"/>
+  <arg name="rvizconfig" default="$(find urdf_tutorial)/rviz/urdf.rviz" />
+
+  <include file="$(find urdf_sim_tutorial)/launch/gazebo.launch">
+    <arg name="model" value="$(arg model)" />
+  </include>
+
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" />
+
+  <rosparam command="load"
+            file="$(find gudrun_sim)/config/joints.yaml"
+            ns="gudrun_joint_state_controller" />
+  <rosparam command="load"
+            file="$(find gudrun_sim)/config/diffdrive.yaml"
+            ns="gudrun_diff_drive_controller" />
+
+  <node name="gudrun_controller_spawner" pkg="controller_manager" type="spawner"
+    args="gudrun_joint_state_controller gudrun_diff_drive_controller --shutdown-timeout 3"/>
+
+ 
+  <node name="rqt_robot_steering" pkg="rqt_robot_steering" type="rqt_robot_steering">
+    <param name="default_topic" value="/gudrun_diff_drive_controller/cmd_vel"/>
+  </node> 
+
+</launch>

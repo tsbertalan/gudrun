@@ -10,6 +10,9 @@
 	<xacro:property name="length" value="0.5"/>
 	<xacro:property name="height" value="0.125"/>
 
+	<xacro:property name="wheel_width" value="0.0625" />
+	<xacro:property name="wheel_radius" value="0.0625" />
+
 	<link name="base_link">
 		<visual>
 			<geometry>
@@ -26,9 +29,6 @@
 			<inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
 		</inertial>
 	</link>
-
-	<xacro:property name="wheel_width" value="0.0625" />
-	<xacro:property name="wheel_radius" value="0.0625" />
 
 	<xacro:macro name="wheel" params="suffix *origin">
 		<link name="wheel_${suffix}">
@@ -62,9 +62,16 @@
 				<mechanicalReduction>1</mechanicalReduction>
 			</actuator>
 			<joint name="base_link_to_wheel_${suffix}">
-				<hardwareInterface>PositionJointInterface</hardwareInterface>
+				<hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
 			</joint>
 		</transmission>
+		<gazebo reference="${suffix}_wheel">
+			<mu1 value="200.0"/>
+			<mu2 value="100.0"/>
+			<kp value="10000000.0" />
+			<kd value="1.0" />
+			<material>Gazebo/Grey</material>
+		</gazebo>
 	</xacro:macro>
 
 	<xacro:wheel suffix="left_front">
