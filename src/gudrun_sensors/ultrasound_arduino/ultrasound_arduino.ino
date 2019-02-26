@@ -19,8 +19,26 @@ void setup() {
         pinMode(echoPin, INPUT);
     }
 
+    // Turn off the L led.
+    pinMode(13, OUTPUT);
+    digitalWrite(13, LOW);
+
     Serial.begin(9600);
   
+}
+
+
+bool pinHigh;
+void toggleBlinkLED() {
+    // Flip built-in LED pin on or off.
+
+    if(pinHigh) {
+        pinHigh = false;
+        digitalWrite(13, LOW);
+    } else {
+        pinHigh = true;
+        digitalWrite(13, HIGH);
+    }
 }
 
 void loop() {
@@ -48,7 +66,9 @@ void loop() {
         Serial.print(distance);
         if( i < SENSOR_COUNT-1)
             Serial.print(",");
-    }
 
+    }
     Serial.println("");    
+
+    toggleBlinkLED();
 }
