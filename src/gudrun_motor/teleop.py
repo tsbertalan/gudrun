@@ -9,6 +9,80 @@ DEBUG_DUMMY = False
 
 
 def _set_servo(num, milliseconds):
+    # C# source code for UscCmd is here: https://github.com/pololu/pololu-usb-sdk/blob/master/Maestro/UscCmd/Program.cs
+    # The key section there is the opts["servo"]  != null block,
+    # which refers to the
+    #     Usc.setTarget(byte servo, ushort target)
+    # method from here:
+    # https://github.com/pololu/pololu-usb-sdk/blob/master/Maestro/Usc/Usc.cs
+    # This calls
+    #     controlTransfer(0x40, (byte)uscRequest.REQUEST_SET_TARGET, value, servo);
+    # which uses
+    #     protected unsafe void controlTransfer(byte RequestType, byte Request, ushort Value, ushort Index)
+    # from https://github.com/pololu/pololu-usb-sdk/blob/master/UsbWrapper_Linux/UsbDevice.cs
+    # which itself calls
+    #     libusbControlTransfer(deviceHandle, RequestType, Request,
+    #                           Value, Index, (byte*)0, 0, (ushort)5000)
+    #
+    # However, there may be easier-to-adapt code here:
+    # https://www.pololu.com/docs/0J40/5.h.1
+    # or, simpler Bash example, here:
+    # https://www.pololu.com/docs/0J40/5.h.4
+    #
+    # This is best documented here: https://www.pololu.com/docs/0J40/5.c
+    #
+    # which is essentially e.g.
+    #    DEVICE=/dev/ttyACM0
+    #    CHANNEL=0
+    #    TARGET=6000
+    #    {
+    #        byte 0x84                     # "Set Target" command
+    #        byte $CHANNEL                 # which servo to set
+    #        byte $((TARGET & 0x7F))       # byte 1/2 of target data
+    #        byte $((TARGET >> 7 & 0x7F))  # byte 2/2 of target data, in quarter-microseconds (0 to 32767)
+    #    } > $DEVICE
+    # 
+    # That is, we will give a Set Target command on channel 0x00,
+    # and the target, a short (16-bit) int, though its MSB is always set to 0 because it's a "data byte"
+    # (see next paragraph) reducing the number of distinct values from ~64000 to ~32000.
+    #
+    # Note that the command 0x84 = 132 = 0b 1000 0100 has its MSB set, since it's a "command byte"--
+    # "data bytes", including the two TARGET bytes described below, always have this bit cleared.
+    # (There's a special "Pololu protocol" available as well as this "compact protocol", in which case
+    # the special 0xAA command byte and a daisy-chain destination byte are prepended, and the actual
+    # command byte is "demoted" to data by clearing its MSB. (So, the Pololu protocol uses 6 bytes).)
+    #
+    # The available commands for our hardware are "Set Target", "Set Speed" (rate-of-change of Target),
+    # "Set Acceleration" (rate-of-rate-of-change of Target), "Get Position" (pulse width, hi/lo digital reading,
+    # measured voltage 0-5V), "Get Errors" ("it is a good idea to check errors continuously"), 
+    # and "Go Home" (center all outputs).
+    # https://www.pololu.com/docs/0J40/5.e
+    #
+    # Much of this is probably unimportant to us, at least for main motor control, since we're just
+    # using this as the PWM input to the car's existing ESC.
+    # 
+    # Say TARGET is 6000 quarter-microseconds, or 0b1011101110000
+    # The first target byte is then
+    #     0b 0001 0111 0111 0000 (= 0x 1 7 7 0)
+    #     &
+    #     0b 0000 0000 0111 1111 (= 0x 0 0 7 F)
+    #     =
+    #     0b 0000 0000 0111 0000 (= 0x     7 0)
+    #
+    # The second target byte is a two-step process--first, we right-shift (throw away rightmost bits) by 7
+    #     0b 0001 0111 0___ ____ 
+    #
+    # We then take only the right seven bits of this.
+    #     0b ____ ___0 0010 1110
+    #     &
+    #     0b 0000 0000 0111 1111
+    #     =
+    #     0b 0000 0000 0010 1110 (= 0x     2 E)
+    # 
+    # So, at the end, we send our 1500 microseconds as 0x70 0x2E.
+
+    # TODO: Implement the above bit magic in the Pythonic way, without the UscCmd utility.
+
     cmd = 'UscCmd --servo %d,%d' % (num, 4.0 * milliseconds)
     system(cmd + ' | grep -v runtime | grep -v target')
 
