@@ -53,15 +53,17 @@ class Ultrasound(object):
                 if len(items) == self.NUM_SENSORS:
                     try:
                         distances = [float(i) for i in items]
+                    
+                        t_last = t
+                        for pub, distance in zip(self.publishers, distances):
+                            self.message.range = distance
+                            self.message.header.stamp = now
+                            pub.publish(self.message)
+
                     except ValueError:
                         import warnings
-                        warnings.warn('Failed to parse serial line:', l)
+                        warnings.warn('Failed to parse serial line: "%s"' % l)
 
-                t_last = t
-                for pub, distance in zip(self.publishers, distances):
-                    self.message.range = distance
-                    self.message.header.stamp = now
-                    pub.publish(self.message)
 
 
 if __name__ == '__main__':
