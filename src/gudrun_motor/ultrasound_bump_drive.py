@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from __future__ import print_function
 from os import system
+import numpy as np
 
 import rospy, time
 from sensor_msgs.msg import Range
@@ -57,12 +58,27 @@ class Evade(Behavior):
         REV = -.25
         durations_states = [
             [.5, CarState(REV, 0)],
-            [2.5, CarState(REV, 1 if left else -1)],
+            [3, CarState(REV, 1 if left else -1)],
             [.5, CarState(0, 0)]
         ]
         ss = [s for (d,s) in durations_states]
         ds = [d for (d,s) in durations_states]
         super(Evade, self).__init__(ss, ds)
+
+
+class Smoother(object):
+
+    def __init__(self, N=10):
+        from collections import deque
+        self.d = deque(maxlen=N)
+
+    def __call__(self, x):
+        self.d.append(x)
+        return np.mean(self.d)
+
+    def clear(self):
+        self.d.clear()
+
 
 class BumpDriver(object):
 
@@ -72,13 +88,15 @@ class BumpDriver(object):
         self.ranges = [20, 20]
 
         self.REACTION_RATE = 10
-        self.BUMP_DISTANCE = 40.
+        self.BUMP_DISTANCE = 23.
         self.FORWARD_SPEED = .25
+        self.TURN_STRENGTH = .04
 
         rospy.Subscriber('sensors/ultrasound_0', Range, self.callback_left)
         rospy.Subscriber('sensors/ultrasound_1', Range, self.callback_right)
 
         self.car = Car()
+        self.steering_smoother = Smoother()
 
         self.behavior = None
 
@@ -89,14 +107,6 @@ class BumpDriver(object):
 
     def callback_right(self, range_message):
         self.ranges[1] = range_message.range
-
-    def test(self):
-        self.car.steering = 1
-        time.sleep(1)
-        self.car.throttle = 1
-        time.sleep(1)
-        self.car.stop()
-        time.sleep(4)
 
     def evade(self):
         self.behavior = Evade(left=self.ranges[0] > self.ranges[1])
@@ -113,12 +123,19 @@ class BumpDriver(object):
                 if min(self.ranges) < self.BUMP_DISTANCE:
                     print('dl=%.0f, dr=%.2f, dmin=%s' % (self.ranges[0], self.ranges[1], min(self.ranges),))
                     self.evade()
+                    self.steering_smoother.clear()
+
                 elif min(self.ranges) >= self.BUMP_DISTANCE:
                     self.go()
 
             if self.behavior is None:
-                self.car.steering = 0
+                # Nothing blocking us; go.
                 self.car.throttle = self.FORWARD_SPEED
+                #self.car.steering = 0
+                s = np.tanh((self.ranges[1] - self.ranges[0]) * self.TURN_STRENGTH)
+                s = self.steering_smoother(s)
+                print('ranges=', self.ranges, '; steering to', s)
+                self.car.steering = s
 
             else:
                 if self.behavior.finished:
