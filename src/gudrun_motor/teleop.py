@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 from __future__ import print_function
 from os import system, getpid
 import time
@@ -330,4 +330,4 @@ def mouse_teleop():
                 break
 
 if __name__ == '__main__':
-    mouse_teleop()
+    keyboard_teleop()
