@@ -37,7 +37,7 @@ Arduino-project working properly, reading my poor-man's grey code.
 Integrating an IMU in (non-embedded) software would be easier.
 
 As for real planning, I still have some reading to do 
-to figure out what's available alreay-written
+to figure out what's available already-written
 for Ackermann-kinematics robots.
 I've seen [TEB local planner](http://wiki.ros.org/teb_local_planner)
 used by others; I'm not sure that this would work with the same global planners
