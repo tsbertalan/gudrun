@@ -1,0 +1,15 @@
+{
+"project name": "Gudrun",
+"blurb": "Build an Ackermann robot with RGBD as its primary sense.",
+"hero image": "doc/headshot.jpg",
+"description": "README.md",
+"starred": 1,
+"entries": [
+	{
+		"content": "doc/entries/entry1.md",
+		"title": "Simple ultrasound reactive control",
+		"subtitle": "26 February 2019",
+		"files": ["doc/entries/2_small.gif", "doc/entries/1_small.gif"]
+	}
+]
+}
