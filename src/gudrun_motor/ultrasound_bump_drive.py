@@ -6,7 +6,7 @@ import numpy as np
 import rospy, time
 from sensor_msgs.msg import Range
 
-from teleop import Car
+from teleop import Car, Smoother
 
 
 class CarState:
@@ -66,20 +66,6 @@ class Evade(Behavior):
         super(Evade, self).__init__(ss, ds)
 
 
-class Smoother(object):
-
-    def __init__(self, N=10):
-        from collections import deque
-        self.d = deque(maxlen=N)
-
-    def __call__(self, x):
-        self.d.append(x)
-        return np.mean(self.d)
-
-    def clear(self):
-        self.d.clear()
-
-
 class BumpDriver(object):
 
     def __init__(self):
@@ -90,7 +76,7 @@ class BumpDriver(object):
         self.REACTION_RATE = 10
         self.BUMP_DISTANCE = 23.
         self.FORWARD_SPEED = .25
-        self.TURN_STRENGTH = .04
+        self.TURN_STRENGTH = .03
 
         rospy.Subscriber('sensors/ultrasound_0', Range, self.callback_left)
         rospy.Subscriber('sensors/ultrasound_1', Range, self.callback_right)
@@ -102,11 +88,15 @@ class BumpDriver(object):
 
         self.loop()
 
+    @staticmethod
+    def _get_range(msg):
+        return min(msg.max_range, max(msg.min_range, msg.range))
+
     def callback_left(self, range_message):
-        self.ranges[0] = range_message.range
+        self.ranges[0] = self._get_range(range_message)
 
     def callback_right(self, range_message):
-        self.ranges[1] = range_message.range
+        self.ranges[1] = self._get_range(range_message)
 
     def evade(self):
         self.behavior = Evade(left=self.ranges[0] > self.ranges[1])

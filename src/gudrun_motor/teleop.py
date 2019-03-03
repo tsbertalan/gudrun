@@ -8,6 +8,22 @@ import sys, termios, tty
 DEBUG_DUMMY = False
 
 
+class Smoother(object):
+
+    def __init__(self, N=10):
+        import numpy as np
+        from collections import deque
+        self.d = deque(maxlen=N)
+
+    def __call__(self, x):
+        import numpy as np
+        self.d.append(x)
+        return np.mean(self.d)
+
+    def clear(self):
+        self.d.clear()
+
+
 def _set_servo(num, milliseconds):
     # C# source code for UscCmd is here: https://github.com/pololu/pololu-usb-sdk/blob/master/Maestro/UscCmd/Program.cs
     # The key section there is the opts["servo"]  != null block,
