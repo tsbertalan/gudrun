@@ -8,8 +8,11 @@ class SpeedRecorder(object):
 
     def __init__(self):
         rospy.init_node('speed_record')
-        
-        self.f = open('speed_records.csv', 'a')
+       
+        filename = rospy.get_param('speed_record/filename', None)
+        self.f = open(filename, 'a') if filename else None
+        if not self.f:
+            print("Given filename was %s; not saving distance data." % filename)
 
         self.v = rospy.get_param('speed_record/throttle')
         self.w = rospy.get_param('speed_record/steering')
@@ -64,6 +67,10 @@ class SpeedRecorder(object):
             self.car.throttle = 0
 
     def write_range(self, which, r):
+
+        if not self.f:
+            return None
+
         d = self._get_range(r)
 
         dsmooth = self.smoother(d)
@@ -83,8 +90,9 @@ class SpeedRecorder(object):
         ))
 
     def write(self, line):
-        self.f.write(line + '\n')
-        self.f.flush()
+        if self.f:
+            self.f.write(line + '\n')
+            self.f.flush()
 
 
 if __name__ == '__main__':

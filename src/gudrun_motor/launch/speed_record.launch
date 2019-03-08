@@ -3,6 +3,7 @@
     <arg name="throttle" default="0.0" />
     <arg name="steering" default="0.0" />
     <arg name="timeout" default="inf" />
+    <arg name="filename" default="speed_records.csv" />
 
     <include file="$(find gudrun_sensors)/launch/ultrasound.launch" />
     <!--<include file="$(find gudrun_motor)/launch/fixed_speed.launch" pass_all_args="true" />-->
