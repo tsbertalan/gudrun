@@ -9,7 +9,7 @@ class Ultrasound(object):
 
     def __init__(self,
         NUM_SENSORS = 2,
-        BAUDRATE = 9600,
+        BAUDRATE = 19200,
         PORT = '/dev/ttyUSB0',
         READ_RATE = 10,
         ):
@@ -31,7 +31,7 @@ class Ultrasound(object):
         m = Range()
         m.radiation_type = Range.ULTRASOUND
         m.field_of_view = 22.5 * 3.14159 / 180.
-        m.min_range = 2.
+        m.min_range = 6.
         m.max_range = 200.
         m.range = 0
         m.header = Header()
