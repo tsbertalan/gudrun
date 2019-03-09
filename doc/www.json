@@ -21,7 +21,11 @@
 		"content": "doc/entries/throttleToVelocity.md",
 		"title": "Open-loop control of speed",
 		"subtitle": "2 March 2019",
-		"files": ["doc/entries/sample_experiment.png", "doc/entries/throttle_rates.png"]
+		"files": [
+            "doc/entries/sample_experiment.png", 
+            "doc/entries/throttle_rates.png",
+            "doc/entries/steering.gif"
+        ]
 	}
 ]
 }
