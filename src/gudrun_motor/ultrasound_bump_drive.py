@@ -21,6 +21,7 @@ class CarState:
     def __repr__(self):
         return str(self)
 
+
 class Behavior(object):
 
     def __init__(self, states, durations):
