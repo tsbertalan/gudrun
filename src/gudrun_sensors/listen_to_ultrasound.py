@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
+from subprocess import check_output
 import serial, time, rospy
 
 from sensor_msgs.msg import Range
@@ -10,9 +11,11 @@ class Ultrasound(object):
     def __init__(self,
         NUM_SENSORS = 2,
         BAUDRATE = 19200,
-        PORT = '/dev/ttyUSB0',
+        PORT = None,
         READ_RATE = 10,
         ):
+        if PORT is None:
+            PORT = check_output(['rosrun', 'gudrun_sensors', 'get_usb_device_by_ID.py', 'encoder_mega']).strip(),
 
         rospy.init_node('listen_to_ultrasound')
 
