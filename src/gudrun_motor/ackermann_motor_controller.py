@@ -8,10 +8,10 @@ from simple_pid import PID
 
 from teleop import Car
 
-class AckermanMotorController(object):
+class AckermannMotorController(object):
 
-    def __init__(self, run=True, PID_update_rate=20):
-        rospy.init_node('ackerman_motor_controller')
+    def __init__(self, PID_update_rate=20):
+        rospy.init_node('ackermann_motor_controller')
 
         self.car = Car()
 
@@ -21,7 +21,7 @@ class AckermanMotorController(object):
 
         # Set the PID's "sample_time" to smaller than our own likely update speed,
         # so we will compute a new control value every call.
-        self.pid = PID(1, 0, 0, setpoint=0, sample_time=1e-6)
+        self.pid = PID(.5, 0.0, 0, setpoint=0, sample_time=1e-6)
 
         GEAR_RATIO = 90.0 / 12.0 / 1.5 # 90 is spur; 12 is pinion; 1.5 quotient is emperical (differential maybe?)
         ENCODER_CPR = 48.0 # [count/rev]
@@ -41,7 +41,7 @@ class AckermanMotorController(object):
         self.PID_update_timer = rospy.Rate(PID_update_rate)
         self._cps = self._speed = 0
 
-        if run: self.spin()
+        self.loop()
 
     def callback(self, message):
         print('Got ackeramn message:', message)
@@ -62,32 +62,40 @@ class AckermanMotorController(object):
         self.car.steering = -angle * 1.65849761
 
     def _son_do_you_know_how_fast_you_were_going(self, msg):
-        print('Noted:', msg.data, '[ticks/s]')
         # TODO: Fix the encoder so that we can get direction as well as speed.
         # This approach will work ok, I guess, for incremental changes.
         # But there will certainly be weirdly buggy edge cases.
         self._cps = msg.data * (1. if self.pid.setpoint >= 0 else -1.)
         self._speed = self._cps * self.CPS_TO_SPEED
 
-    def spin(self):
+    def loop(self):
         while not rospy.is_shutdown():
             self.update_pid()
-            print('is_shutdown:', rospy.is_shutdown())
-            self.PID_update_timer.sleep()
+            try:
+                self.PID_update_timer.sleep()
+            except rospy.ROSInterruptException:
+                print('Caught interrupt in ackermann_motor_controller!')
+                break
+
+        if rospy.is_shutdown():
+            print('Caught shutdown signal in ackermann_motor_controller!')
 
     def update_pid(self):
         command = self.pid.setpoint
-        if command != 0:
-            control = self.pid(self._speed)
-            # Ensure the sign of the command always matches the sign of the requested direction.
-            # This is a bad hack.
-            sign = lambda k: (-1. if k < 0 else 1.)
-            if sign(command) != sign(control):
-                control *= -1.
-        else:
+
+        control = self.pid(self._speed)
+        # print('Updating PID--new value is', control)
+        # Ensure the sign of the command always matches the sign of the requested direction.
+        # This is a bad hack.
+        sign = lambda k: (-1. if k < 0 else 1.)
+        if sign(command) != sign(control):
+            control *= -1.
+
+        if command == 0:
             control = 0
 
-        throttle = self.pseudospeed_to_throttle(control)
+        throttle = control
+        # throttle = self.pseudospeed_to_throttle(control)
         print('speed=', self._speed, '[m/s]; setpoint=', command, '[m/s]; throttle=', throttle, '[a.u.]')
         self.car.throttle = throttle
 
@@ -114,4 +122,4 @@ class AckermanMotorController(object):
 
 
 if __name__ == '__main__':
-    AckermanMotorController()
+    AckermannMotorController()

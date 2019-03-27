@@ -1,4 +1,0 @@
-<launch>
-  <node type="teleop_ackerman.py" name="teleop_ackerman" pkg="gudrun_motor" output="screen"/>
-</launch>
-
