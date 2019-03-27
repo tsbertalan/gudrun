@@ -5,7 +5,7 @@ volatile long count;
 
 // double dt, rpm, wheel_revolutions, wheel_revolutions_old, last_printed_wheel_revolutions;
 
-const int PIN_A = 3;
+const int PIN_A = 2;
 const int PIN_A_INTNUM = 1;
 // const int CPR_WHEEL = 360; //=48*90/12 gear ratio is 90:12 and motor encoder CPR is 48.
 
@@ -29,8 +29,8 @@ void setup()
 	Serial.begin(115200);
 
 	//Initialize the intterrupt pin (Arduino digital pin 2)
-	//pinMode(2, INPUT_PULLUP);
-	pinMode(PIN_A, INPUT);
+	pinMode(PIN_A, INPUT_PULLUP);
+//	pinMode(PIN_A, INPUT);
 	attachInterrupt(PIN_A_INTNUM, magnet_detect, CHANGE);
 	count = 0;
 	// rpm = 0;
@@ -59,4 +59,3 @@ void loop()//Measure RPM
 		// }
 	}
 }
-
