@@ -1,0 +1,5 @@
+<launch>
+    <include file="$(find gudrun_motor)/launch/encoder.launch" />
+    <node type="ackermann_motor_controller.py" name="ackermann_motor_controller" pkg="gudrun_motor" output="screen"/>
+</launch>
+
