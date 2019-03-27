@@ -98,7 +98,7 @@ def _set_servo(num, milliseconds):
     # So, at the end, we send our 1500 microseconds as 0x70 0x2E.
 
     # TODO: Implement the above bit magic in the Pythonic way, without the UscCmd utility.
-
+    # Note that it appears that these subproceses block the enclosing ROS node from exiting properly.
     cmd = 'UscCmd --servo %d,%d' % (num, 4.0 * milliseconds)
     system(cmd + ' | grep -v runtime | grep -v target')
 

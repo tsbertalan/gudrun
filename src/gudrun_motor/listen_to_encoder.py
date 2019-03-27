@@ -14,11 +14,12 @@ class Encoder(object):
         READ_RATE = 20,  # 1639
         # READ_RATE = 10,  # 1552
         ):
+        rospy.init_node('listen_to_encoder')
+        
         if PORT is None:
             PORT = check_output(['rosrun', 'gudrun_sensors', 'get_usb_device_by_ID.py', 'encoder_micro']).strip()
         print('Connecting to %s on port %s.' % (type(self).__name__, PORT))
 
-        rospy.init_node('listen_to_encoder')
 
         self.BAUDRATE = BAUDRATE
         self.PORT = PORT
@@ -71,6 +72,9 @@ class Encoder(object):
                     self.messages[1].data = counts_per_second
                     self.position_publisher.publish(self.messages[0])
                     self.speed_publisher.publish(self.messages[1])
+
+        if rospy.is_shutdown():
+            print('Caught shutdown signal in listen_to_encoder!')
 
 
 if __name__ == '__main__':

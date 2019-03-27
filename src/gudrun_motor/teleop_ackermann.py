@@ -69,7 +69,7 @@ def keyboard_teleop():
         return ch
 
     BUTTON_DELAY = 0.2
-    THROTTLE_INCREMENT = .01
+    THROTTLE_INCREMENT = .2
     STEERING_INCREMENT = .25
 
     def inc(steering=True, direction=+1):
@@ -127,10 +127,16 @@ def keyboard_teleop():
             label, action = actions[char]
             print(label, end='\n' if action in [None, display_help, center, stop] else ' ')
             if action is None:
+                center()
+                stop()
                 break
             action()
+
         # else:
         #     print('Got unknown char "%s".' % char)
+        
+    if rospy.is_shutdown():
+        print('Caught shutdown signal in teleop_ackermann!')
 
 if __name__ == '__main__':
     keyboard_teleop()
