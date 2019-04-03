@@ -1,0 +1,17 @@
+<launch>
+
+    <!-- <include file="$(find gudrun_sensors)/launch/ultrasound.launch" /> -->
+    <!--<include file="$(find gudrun_motor)/launch/fixed_speed.launch" pass_all_args="true" />-->
+
+    <include file="$(find openni_launch)/launch/openni.launch" />
+    <!-- <include file="$(find gudrun_motor)/launch/ackerman_motor_controller.launch" /> -->
+
+    <node 
+        type="reactive_optimization.py" 
+        name="reactive_optimization" 
+        pkg="gudrun_planning" 
+        output="screen"
+        >
+    </node>
+
+</launch>
