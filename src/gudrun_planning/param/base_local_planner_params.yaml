@@ -1,0 +1,162 @@
+# TrajectoryPlannerROS:
+
+#   # Current limits based on AZ3 standalone configuration.
+#   acc_lim_x:  0.75
+#   acc_lim_y:  0.75
+#   acc_lim_theta: 4.00
+#   max_vel_x:  0.500
+#   min_vel_x:  0.212
+#   max_rotational_vel: 0.550
+#   min_in_place_rotational_vel: 0.15
+#   escape_vel: -0.10
+#   holonomic_robot: false
+
+#   xy_goal_tolerance:  0.50
+#   yaw_goal_tolerance: 0.50
+
+#   sim_time: 1.7
+#   # sim_granularity: 0.025
+#   sim_granularity: 0.05
+#   vx_samples: 3
+#   vtheta_samples: 3
+#   # vtheta_samples: 20
+
+#   goal_distance_bias: 0.8
+#   path_distance_bias: 0.6
+#   occdist_scale: 0.01
+#   heading_lookahead: 0.325
+#   dwa: true
+
+#   oscillation_reset_dist: 0.05
+#   meter_scoring: true
+
+TebLocalPlannerROS:
+
+ # odom_topic: odom
+ # map_frame: /odom
+ odom_topic: /rtabmap/odom
+ map_frame: /map
+    
+ # Trajectory
+  
+ teb_autosize: True
+ # dt_ref: 0.3
+ # dt_hysteresis: 0.1
+ dt_ref: 0.2
+ dt_hysteresis: 0.02
+ global_plan_overwrite_orientation: True
+ max_global_plan_lookahead_dist: 3.0
+ feasibility_check_no_poses: 5
+ force_init_new_goal_dist: 0.2 # 1
+    
+ # Robot
+         
+ max_vel_x: 0.4
+ max_vel_x_backwards: 0.2
+ max_vel_theta: 0.3
+ # acc_lim_x: 0.5
+ # acc_lim_theta: 0.5
+ acc_lim_x: 0.05
+ acc_lim_theta: 0.25
+ # min_turning_radius: 1.0
+ min_turning_radius: 0.5
+
+ cmd_angle_instead_rotvel: True
+ wheelbase: 0.355
+
+ footprint_model: # types: "point", "circular", "two_circles", "line", "polygon"
+   type: "polygon"
+   radius: 0.2 # for type "circular"
+   line_start: [-0.3, 0.0] # for type "line"
+   line_end: [0.3, 0.0] # for type "line"
+   # front_offset: 0.16 # for type "two_circles"
+   # front_radius: 0.2 # for type "two_circles"
+   # rear_offset: 0.16 # for type "two_circles"
+   # rear_radius: 0.2 # for type "two_circles"
+   front_offset: 0.12 # for type "two_circles"
+   front_radius: 0.15 # for type "two_circles"
+   rear_offset: 0.12 # for type "two_circles"
+   rear_radius: 0.15 # for type "two_circles"
+   # vertices: [ [0.25, -0.05], [0.18, -0.05], [0.18, -0.18], [-0.19, -0.18], [-0.25, 0], [-0.19, 0.18], [0.18, 0.18], [0.18, 0.05], [0.25, 0.05] ] # for type "polygon"
+   vertices: [[ 0.292,  0.140], [-0.292,  0.140], [-0.292, -0.140], [ 0.292, -0.140]]
+
+ # GoalTolerance
+    
+ xy_goal_tolerance: 0.2
+ yaw_goal_tolerance: 0.1
+ free_goal_vel: False
+    
+ # Obstacles
+    
+ min_obstacle_dist: 0.2
+ inflation_dist: 0.2 # Only takes effect if larger than min_obstacle_dist
+ legacy_obstacle_association: True
+ include_dynamic_obstacles: True
+ include_costmap_obstacles: True
+ costmap_obstacles_behind_robot_dist: 1.0
+ obstacle_poses_affected: 30
+ # costmap_converter_plugin: ""
+ # costmap_converter_plugin: "costmap_converter::CostmapToPolygonsDBSMCCH"
+ costmap_converter_plugin: "costmap_converter::CostmapToPolygonsDBSConcaveHull"
+ # costmap_converter_plugin: "costmap_converter::CostmapToPolygonsDBSMCCH"
+ 
+ costmap_converter_spin_thread: True
+ costmap_converter_rate: 5
+
+
+ costmap_converter/CostmapToPolygonsDBSConcaveHull:
+  # Parameter for DB_Scan, maximum distance to neighbors [m]
+  cluster_max_distance: 0.4
+  # Parameter for DB_Scan: minimum number of points that define a cluster
+  cluster_min_pts: 2
+  # Parameter for DB_Scan: maximum number of points that define a cluster (limit cluster size to avoid large L- and U-shapes)
+  cluster_max_pts: 60
+  # Clear keypoints/vertices of the convex polygon that are close to each other [distance in meters] (0: keep all)
+  convex_hull_min_pt_separation: 0.1
+  # Smaller depth: sharper surface, large depth: convex hull
+  concave_hull_depth: .20
+
+ costmap_converter/CostmapToLinesDBSRANSAC:
+    cluster_max_distance: 0.4
+    cluster_min_pts: 2
+    ransac_inlier_distance: 0.15
+    ransac_min_inliers: 10
+    ransac_no_iterations: 2000
+    ransac_remainig_outliers: 3
+    ransac_convert_outlier_pts: True
+    ransac_filter_remaining_outlier_pts: False
+    convex_hull_min_pt_separation: 0.1
+
+ # Optimization
+    
+ no_inner_iterations: 5
+ no_outer_iterations: 4
+ optimization_activate: True
+ optimization_verbose: False
+ penalty_epsilon: 0.1
+ weight_max_vel_x: 2
+ weight_max_vel_theta: 1
+ weight_acc_lim_x: 1
+ weight_acc_lim_theta: 1
+ weight_kinematics_nh: 1000
+ weight_kinematics_forward_drive: 1
+ weight_kinematics_turning_radius: 1
+ weight_optimaltime: 1
+ # weight_obstacle: 50
+ weight_obstacle: 10
+ weight_dynamic_obstacle: 10 # not in use yet
+ alternative_time_cost: False # not in use yet
+
+ # Homotopy Class Planner
+
+ enable_homotopy_class_planning: True
+ enable_multithreading: True
+ simple_exploration: True
+ max_number_classes: 4
+ roadmap_graph_no_samples: 15
+ roadmap_graph_area_width: 5
+ h_signature_prescaler: 0.5
+ h_signature_threshold: 0.1
+ obstacle_keypoint_offset: 0.1
+ obstacle_heading_threshold: 0.45
+ visualize_hc_graph: False
