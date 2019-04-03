@@ -10,33 +10,21 @@ from teleop import Car
 
 class AckermannMotorController(object):
 
-    def __init__(self, PID_update_rate=20):
+    def __init__(self, PID_update_rate=5):
         rospy.init_node('ackermann_motor_controller')
 
         self.car = Car()
 
         rospy.Subscriber('ackermann_cmd', AckermannDriveStamped, self.callback)
         rospy.Subscriber('motor_encoder_speed', Float32, self._son_do_you_know_how_fast_you_were_going)
+        self.cp_publisher = rospy.Publisher('control/cp', Float32)
+        self.ci_publisher = rospy.Publisher('control/ci', Float32)
+        self.cd_publisher = rospy.Publisher('control/cd', Float32)
         self._speed = 0
 
         # Set the PID's "sample_time" to smaller than our own likely update speed,
         # so we will compute a new control value every call.
-        self.pid = PID(.5, 0.0, 0, setpoint=0, sample_time=1e-6)
-
-        GEAR_RATIO = 90.0 / 12.0 / 1.5 # 90 is spur; 12 is pinion; 1.5 quotient is emperical (differential maybe?)
-        ENCODER_CPR = 48.0 # [count/rev]
-        WHEEL_CIRCUMFRENCE = (
-            3.14159 # circumfrence [diameters]
-            * 2.0   # circumfrence [in]
-            * 2.54  # circumfrence [cm]
-            / 100.  # circumfrence [m]
-        )
-        self.CPS_TO_SPEED = (
-            1.0                   # motor [count/s]
-            / ENCODER_CPR         # motor [rev/s]
-            / GEAR_RATIO          # wheel [rev/s]
-            * WHEEL_CIRCUMFRENCE  # wheel [m/s]
-        )
+        self.pid = PID(.1, 0.2, 0, setpoint=0, sample_time=1e-6)
 
         self.PID_update_timer = rospy.Rate(PID_update_rate)
         self._cps = self._speed = 0
@@ -65,8 +53,7 @@ class AckermannMotorController(object):
         # TODO: Fix the encoder so that we can get direction as well as speed.
         # This approach will work ok, I guess, for incremental changes.
         # But there will certainly be weirdly buggy edge cases.
-        self._cps = msg.data * (1. if self.pid.setpoint >= 0 else -1.)
-        self._speed = self._cps * self.CPS_TO_SPEED
+        self._speed = msg.data * (1. if self.pid.setpoint >= 0 else -1.)
 
     def loop(self):
         while not rospy.is_shutdown():
@@ -84,6 +71,13 @@ class AckermannMotorController(object):
         command = self.pid.setpoint
 
         control = self.pid(self._speed)
+
+        cp, ci, cd = self.pid.components
+        self.cp_publisher.publish(cp)
+        self.ci_publisher.publish(ci)
+        self.cd_publisher.publish(cd)
+        print('(cp=%s) + (ci=%s) + (cd=%s) = %s' % (cp,ci,cd,control))
+
         # print('Updating PID--new value is', control)
         # Ensure the sign of the command always matches the sign of the requested direction.
         # This is a bad hack.
@@ -94,9 +88,11 @@ class AckermannMotorController(object):
         if command == 0:
             control = 0
 
-        throttle = control
-        # throttle = self.pseudospeed_to_throttle(control)
-        print('speed=', self._speed, '[m/s]; setpoint=', command, '[m/s]; throttle=', throttle, '[a.u.]')
+        # throttle = control
+        throttle = self.pseudospeed_to_throttle(control)
+        print('pv=%s [m/s]; sp=%s [m/s]; cv=%s [a.u.]' % (
+            self._speed, command, throttle
+        ))
         self.car.throttle = throttle
 
     @staticmethod

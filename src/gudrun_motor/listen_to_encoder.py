@@ -31,6 +31,21 @@ class Encoder(object):
         self.speed_publisher = rospy.Publisher('motor_encoder_speed', Float32, queue_size=1)
         self.messages = Int32(), Float32()
 
+        WHEEL_CIRCUMFRENCE = (
+            3.14159 # circumfrence [diameters]
+            * 2.0   # circumfrence [in]
+            * 2.54  # circumfrence [cm]
+            / 100.  # circumfrence [m]
+        )
+        GEAR_RATIO = 90.0 / 12.0 / 1.5 # 90 is spur; 12 is pinion; 1.5 quotient is emperical (differential maybe?)
+        ENCODER_CPR = 48.0 # [count/rev]
+        self.CPS_TO_SPEED = (
+            1.0                   # motor [count/s]
+            / ENCODER_CPR         # motor [rev/s]
+            / GEAR_RATIO          # wheel [rev/s]
+            * WHEEL_CIRCUMFRENCE  # wheel [m/s]
+        )
+
         self.loop()
 
     def loop(self):
@@ -69,9 +84,10 @@ class Encoder(object):
                     counts_per_second = float(dcount) / dt
 
                     self.messages[0].data = count
-                    self.messages[1].data = counts_per_second
-                    self.position_publisher.publish(self.messages[0])
-                    self.speed_publisher.publish(self.messages[1])
+                    self.messages[1].data = counts_per_second * self.CPS_TO_SPEED
+                    if abs(self.messages[1].data ) < 100:
+                        self.position_publisher.publish(self.messages[0])
+                        self.speed_publisher.publish(self.messages[1])
 
         if rospy.is_shutdown():
             print('Caught shutdown signal in listen_to_encoder!')
