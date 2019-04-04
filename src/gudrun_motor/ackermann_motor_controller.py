@@ -12,14 +12,15 @@ class AckermannMotorController(object):
 
     def __init__(self, PID_update_rate=5):
         rospy.init_node('ackermann_motor_controller')
+        rospy.loginfo('Started ackermann_motor_controller')
 
         self.car = Car()
 
         rospy.Subscriber('ackermann_cmd', AckermannDriveStamped, self.callback)
         rospy.Subscriber('motor_encoder_speed', Float32, self._son_do_you_know_how_fast_you_were_going)
-        self.cp_publisher = rospy.Publisher('control/cp', Float32)
-        self.ci_publisher = rospy.Publisher('control/ci', Float32)
-        self.cd_publisher = rospy.Publisher('control/cd', Float32)
+        self.cp_publisher = rospy.Publisher('control/cp', Float32, queue_size=10)
+        self.ci_publisher = rospy.Publisher('control/ci', Float32, queue_size=10)
+        self.cd_publisher = rospy.Publisher('control/cd', Float32, queue_size=10)
         self._speed = 0
 
         # Set the PID's "sample_time" to smaller than our own likely update speed,
@@ -32,7 +33,6 @@ class AckermannMotorController(object):
         self.loop()
 
     def callback(self, message):
-        print('Got ackeramn message:', message)
         self.set_steering(message.drive.steering_angle)
         self.set_throttle(message.drive.speed)
 
@@ -76,9 +76,7 @@ class AckermannMotorController(object):
         self.cp_publisher.publish(cp)
         self.ci_publisher.publish(ci)
         self.cd_publisher.publish(cd)
-        print('(cp=%s) + (ci=%s) + (cd=%s) = %s' % (cp,ci,cd,control))
 
-        # print('Updating PID--new value is', control)
         # Ensure the sign of the command always matches the sign of the requested direction.
         # This is a bad hack.
         sign = lambda k: (-1. if k < 0 else 1.)
@@ -88,11 +86,7 @@ class AckermannMotorController(object):
         if command == 0:
             control = 0
 
-        # throttle = control
         throttle = self.pseudospeed_to_throttle(control)
-        print('pv=%s [m/s]; sp=%s [m/s]; cv=%s [a.u.]' % (
-            self._speed, command, throttle
-        ))
         self.car.throttle = throttle
 
     @staticmethod

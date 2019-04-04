@@ -131,8 +131,8 @@ class Axis(object):
 
 class Car(object):
 
-    def __init__(self, steering_pin=0, throttle_pin=1, dummy=DEBUG_DUMMY):
-        self.MAX_THROTTLE_ABS = .3
+    def __init__(self, steering_pin=0, throttle_pin=1, dummy=DEBUG_DUMMY, MAX_THROTTLE_ABS=.3):
+        self.MAX_THROTTLE_ABS = MAX_THROTTLE_ABS
         self._steering_axis = Axis(steering_pin, dummy=dummy)
         self._throttle_axis = Axis(throttle_pin, dummy=dummy)
         self._reversing = False

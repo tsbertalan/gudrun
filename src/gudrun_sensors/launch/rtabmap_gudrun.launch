@@ -62,7 +62,7 @@
   <arg name="args"                    default=""/>              <!-- delete_db_on_start, udebug -->
   <arg name="rtabmap_args"            default="--delete_db_on_start"/>   <!-- deprecated, use "args" argument -->
   <arg name="launch_prefix"           default=""/>              <!-- for debugging purpose, it fills launch-prefix tag of the nodes -->
-  <arg name="output"                  default="screen"/>        <!-- Control node output (screen or log) -->
+  <arg name="output"                  default="log"/>        <!-- Control node output (screen or log) -->
 
   <!-- if timestamps of the input topics are synchronized using approximate or exact time policy-->
   <arg     if="$(arg stereo)" name="approx_sync"  default="false"/>
