@@ -49,4 +49,8 @@
         <rosparam file="$(find gunnar)/param/base_local_planner_params.yaml" command="load" ns="TrajectoryPlannerROS"/>
         <rosparam file="$(find gunnar)/param/move_base_params.yaml" command="load" ns='TrajectoryPlannerROS'/>
      </node> -->
+
+  <node pkg="gudrun_motor" type="cmd_vel_to_ackermann_drive.py" name="cmd_vel_to_ackermann_drive" output="screen" />
+
+  <include file="$(find gudrun_motor)/launch/ackermann_motor_controller.launch" />
 </launch>
