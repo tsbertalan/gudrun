@@ -1,6 +1,6 @@
 <!--Read a pose objectives topic and translate these moment-by-moment into movement commands.-->
 <launch>
-    <node pkg="tf" type="static_transform_publisher" name="kinect_position" args="0 0 0 0 0 0 odom base_link 100" /> 
+    <node pkg="tf" type="static_transform_publisher" name="kinect_position" args="-.305 0 -.127 0 0 0 camera_link base_link 100" /> 
 
     <!-- <node pkg="global_planner" type="planner" respawn="false" name="planner" output="screen">
     	<remap from="/rtabmap/grid_map" to="/map"/>

@@ -58,8 +58,8 @@ TebLocalPlannerROS:
  # acc_lim_theta: 0.5
  acc_lim_x: 0.05
  acc_lim_theta: 0.25
- # min_turning_radius: 1.0
- min_turning_radius: 0.5
+ min_turning_radius: 1.0
+ # min_turning_radius: 0.5
 
  cmd_angle_instead_rotvel: True
  wheelbase: 0.355
@@ -78,7 +78,8 @@ TebLocalPlannerROS:
    rear_offset: 0.12 # for type "two_circles"
    rear_radius: 0.15 # for type "two_circles"
    # vertices: [ [0.25, -0.05], [0.18, -0.05], [0.18, -0.18], [-0.19, -0.18], [-0.25, 0], [-0.19, 0.18], [0.18, 0.18], [0.18, 0.05], [0.25, 0.05] ] # for type "polygon"
-   vertices: [[ 0.292,  0.140], [-0.292,  0.140], [-0.292, -0.140], [ 0.292, -0.140]]
+   # vertices: [[ 0.292+.355/2,  0.140], [-0.292,  0.140], [-0.292, -0.140], [ 0.292, -0.140]]
+   vertices: [[ 0.4695,  0.140], [-0.1145,  0.140], [-0.1145, -0.140], [ 0.4695, -0.140]]
 
  # GoalTolerance
     
@@ -88,7 +89,7 @@ TebLocalPlannerROS:
     
  # Obstacles
     
- min_obstacle_dist: 0.2
+ min_obstacle_dist: 0.02
  inflation_dist: 0.2 # Only takes effect if larger than min_obstacle_dist
  legacy_obstacle_association: True
  include_dynamic_obstacles: True
