@@ -1,8 +1,9 @@
 # Gudrun
 
-<a href="headshot.jpg"><img src="headshot.jpg" width="30%" /></a>
-<img src="1_small.gif" width="30%" />
-<img src="2_small.gif" width="30%" />
+<a href="headshot.jpg"><img src="headshot.jpg" width="24%" /></a>
+<img src="1_small.gif" width="24%" />
+<img src="2_small.gif" width="24%" />
+<a href="https://youtu.be/KhBlflgKe1Q?t=81"><img src="teb_demo.gif" width="24%" /></a>
 
 This robot will be a variant of the [Donkey car](http://www.donkeycar.com/), probably using the [recommended chassis](https://hobbyking.com/en_us/trooper-pro-4x4-1-10-brushless-sct-arr.html). 
 However, instead of controlling it with a Raspberry Pi, I'll use [a computer I built last year](https://pcpartpicker.com/user/tsbertalan/saved/#view=dk9GXL) (mini-ITX, I think) for a different purpose. I might replace the motherboard with a slim-mini-ITX, a standard which includes a 19VDC power jack. 

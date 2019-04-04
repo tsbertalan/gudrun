@@ -26,6 +26,16 @@
             "doc/entries/throttle_rates.png",
             "doc/entries/steering.gif"
         ]
+	},
+	{
+		"content": "doc/entries/teb.md",
+		"title": "Timed-elastic-band path planning",
+		"subtitle": "3 April 2019",
+		"files": [
+			"doc/entries/teb_demo.gif",
+			"doc/entries/frames.png",
+			"doc/entries/rosgraph.svg"
+		]
 	}
 ]
 }
