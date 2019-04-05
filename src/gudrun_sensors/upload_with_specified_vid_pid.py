@@ -59,8 +59,9 @@ def change_vendor_product(pre_string='leonardo', vid=None, pid=None, do_backup=T
 				if not xid.startswith('0x'):
 					xid = '0x%s' % xid
 				if '%s.build.%s=' % (pre_string, k) in l:
+					print('From:', l)
 					l = '%s.build.%s=%s' % (pre_string, k, xid)
-					print(l)
+					print('To:', l)
 		new_file.append(l)
 	new_file = '\n'.join(new_file)
 
@@ -88,9 +89,10 @@ class modified_boards_txt(object):
 	def __exit__(self, type, value, traceback):
 		restore_backup()
 
-def upload(**kw):
+def upload(port=None, **kw):
 	from glob import glob
-	port = cmd('rosrun', 'gudrun_sensors', 'get_usb_device_by_ID.py', 'encoder_micro').strip()
+
+	
 	inofile = glob('*.ino')[0]
 
 	with modified_boards_txt(**kw):
@@ -107,4 +109,14 @@ if __name__ == '__main__':
 	# 		sleep(1)
 
 
-	upload(pid='8037')
+	import argparse
+	parser = argparse.ArgumentParser(description='Upload ino file with specified product and vendor ID.')
+	parser.add_argument('--product', default='8036')
+	parser.add_argument('--vendor', default='2341')
+	parser.add_argument('--port', default=None)
+	args = parser.parse_args()
+	if args.port is None:
+		args.port = cmd('rosrun', 'gudrun_sensors', 'get_usb_device_by_ID.py', 'Arduino_LLC_Arduino_Leonardo_8036:2341').strip()
+		print('No port was specified, so getting default as', args.port)
+	upload(pid=args.product, vid=args.vendor, port=args.port)
+	
