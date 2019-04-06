@@ -10,7 +10,7 @@ from teleop import Car
 
 class AckermannMotorController(object):
 
-    def __init__(self, PID_update_rate=5):
+    def __init__(self, PID_update_rate=20):
         rospy.init_node('ackermann_motor_controller')
         rospy.loginfo('Started ackermann_motor_controller')
 
@@ -19,14 +19,18 @@ class AckermannMotorController(object):
 
         rospy.Subscriber('ackermann_cmd', AckermannDriveStamped, self.callback)
         rospy.Subscriber('motor_encoder_speed', Float32, self._son_do_you_know_how_fast_you_were_going)
-        self.cp_publisher = rospy.Publisher('control/cp', Float32, queue_size=10)
-        self.ci_publisher = rospy.Publisher('control/ci', Float32, queue_size=10)
-        self.cd_publisher = rospy.Publisher('control/cd', Float32, queue_size=10)
+        self.cp_publisher = rospy.Publisher('speed_control/proportional', Float32, queue_size=10)
+        self.ci_publisher = rospy.Publisher('speed_control/integral', Float32, queue_size=10)
+        self.cd_publisher = rospy.Publisher('speed_control/derivative', Float32, queue_size=10)
+        self.sp_publisher = rospy.Publisher('speed_control/setpoint', Float32, queue_size=10)
+        self.pv_publisher = rospy.Publisher('speed_control/measured', Float32, queue_size=10)
+        self.cv_publisher = rospy.Publisher('speed_control/control', Float32, queue_size=10)
+        self.ce_publisher = rospy.Publisher('speed_control/error', Float32, queue_size=10)
         self._speed = 0
 
         # Set the PID's "sample_time" to smaller than our own likely update speed,
         # so we will compute a new control value every call.
-        self.pid = PID(.1, 0.2, 0, setpoint=0, sample_time=1e-6, output_limits=(0, None), proportional_on_measurement=True)
+        self.pid = PID(.5, 0.2, 0, setpoint=0, sample_time=1e-6, output_limits=(0, None), proportional_on_measurement=True)
 
         self.PID_update_timer = rospy.Rate(PID_update_rate)
         self._cps = self._speed = 0
@@ -80,11 +84,6 @@ class AckermannMotorController(object):
         command = self._command
         control = self.pid(self._speed)
 
-        cp, ci, cd = self.pid.components
-        self.cp_publisher.publish(cp)
-        self.ci_publisher.publish(ci)
-        self.cd_publisher.publish(cd)
-
         # Ensure the sign of the command always matches the sign of the requested direction.
         # Our controller is like a gas pedal; always positive. But the lower-level Car
         # interface expects negative numbers for reverse drive.
@@ -94,6 +93,16 @@ class AckermannMotorController(object):
 
         if command == 0:
             control = 0
+
+        cp, ci, cd = self.pid.components
+        self.cp_publisher.publish(cp)
+        self.ci_publisher.publish(ci)
+        self.cd_publisher.publish(cd)
+
+        self.sp_publisher.publish(abs(command))
+        self.pv_publisher.publish(self._speed)
+        self.cv_publisher.publish(abs(control))
+        self.ce_publisher.publish(self._speed - abs(command))
 
         throttle = self.pseudospeed_to_throttle(control)
         self.car.throttle = throttle
