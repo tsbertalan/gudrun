@@ -7,7 +7,8 @@ volatile long count;
 
 const int PIN_A = 2;
 const int PIN_A_INTNUM = 1;
-// const int CPR_WHEEL = 360; //=48*90/12 gear ratio is 90:12 and motor encoder CPR is 48.
+const int PIN_B = 3;
+const int PIN_B_INTNUM = 2;
 
 
 void magnet_detect()//This function is called whenever a magnet/interrupt is detected by the arduino
@@ -22,7 +23,16 @@ void magnet_detect()//This function is called whenever a magnet/interrupt is det
 
 	// Serial.print("    motor_cps = ");
 	// Serial.println(counts_per_second);
+	
+	// Serial.print("Saw movement on pin A: ");
+	// Serial.println(count);
 }
+
+// void magnet_detect_b()
+// {
+// 	Serial.print("Saw movement on pin B: ");
+// 	Serial.println(count);
+// }
 
 void setup()
 {
@@ -30,8 +40,9 @@ void setup()
 
 	//Initialize the intterrupt pin (Arduino digital pin 2)
 	pinMode(PIN_A, INPUT_PULLUP);
-//	pinMode(PIN_A, INPUT);
+	pinMode(PIN_B, INPUT_PULLUP);
 	attachInterrupt(PIN_A_INTNUM, magnet_detect, CHANGE);
+	// attachInterrupt(PIN_B_INTNUM, magnet_detect_b, CHANGE);
 	count = 0;
 	// rpm = 0;
 	// timeold = 0;
