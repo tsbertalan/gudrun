@@ -10,6 +10,7 @@ class MotorControl(object):
         self.ser = serial.Serial(PORT, BAUDRATE)
         self.HEADER = 0x7E
         self.verbose = verbose
+        self.last_bytes = 90, 90
 
     @staticmethod
     def checksum(msg):
@@ -19,7 +20,13 @@ class MotorControl(object):
             t += c
         return t & 0xff
 
-    def send_packet(self, byte_a, byte_b):
+    def send_packet(self, byte_a=None, byte_b=None):
+        if byte_a is None:
+            byte_a = self.last_bytes[0]
+        if byte_b is None:
+            byte_b = self.last_bytes[1]
+        self.last_bytes = byte_a, byte_b
+
         c = self.checksum([self.HEADER, byte_a, byte_b])
         if self.verbose: print('Sending steering=%s, throttle=%s -> checksum=%s' % (byte_a, byte_b, c))
         self.ser.write(chr(self.HEADER))
