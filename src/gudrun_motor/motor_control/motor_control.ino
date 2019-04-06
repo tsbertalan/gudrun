@@ -1,17 +1,14 @@
 #include <Servo.h>
 
-// Servo steering;  // create servo object to control a servo
-// twelve servo objects can be created on most boards
-
+Servo steering, throttle;
 int incomingByte = 0;
 int angle0 = 0;
 int angle1 = 0;
 
-int pointer = -1;
-
-
 const uint8_t header = 0x7E;
 const uint8_t bufferSize = 4;
+
+const int THROTTLE_NEUTRAL = 91;
 
 uint8_t buffer[bufferSize];
 uint8_t readCounter;
@@ -23,6 +20,11 @@ uint8_t firstTimeHeader;
 void setup(){
   while(!Serial);
   Serial.begin(115200);
+
+  steering.attach(2);
+  throttle.attach(9);
+  throttle.write(THROTTLE_NEUTRAL);
+  delay(300);
   
   readCounter = 0;
   isHeader = 0;
@@ -64,10 +66,8 @@ void loop(){
       //if header was found
       if(isHeader){
 
-
         //get checksum value from buffer's last value, according to defined protocol
         uint8_t checksumValue = buffer[bufferSize-1];
-        
 
         //perform checksum validation, it's optional but really suggested
         Serial.print("buffer = [");
@@ -76,11 +76,19 @@ void loop(){
           Serial.print(", ");
         }
         Serial.println("]");
-        Serial.print("Verifying that checksum is equal to given value of "); Serial.println(checksumValue, DEC);
         if(verifyChecksum(checksumValue)){
-          Serial.println("Checksum checks out.");
+          Serial.println("checksum_ok");
+
+          steering.write(buffer[1]);
+
+          float throttle_us = 1000 + 1000. * ((float) buffer[2]) / 180.;
+          Serial.print("throttle microseconds: "); Serial.println((int) throttle_us);
+          throttle.writeMicroseconds((int) throttle_us);
+          // throttle.write(buffer[2]);
+
+
         } else {
-          Serial.println("Bad checksum.");
+          Serial.println("checksum_bad");
         }
         
         //restart header flag

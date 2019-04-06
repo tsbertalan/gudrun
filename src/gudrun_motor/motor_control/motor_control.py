@@ -7,18 +7,14 @@ class MotorControl(object):
     def __init__(self, PORT=None, BAUDRATE=115200):
 
         if PORT is None: PORT = check_output(['rosrun', 'gudrun_sensors', 'get_usb_device_by_ID.py', 'motor_control']).strip()
-
         self.ser = serial.Serial(PORT, BAUDRATE)
-
         self.HEADER = 0x7E
 
     @staticmethod
     def checksum(msg):
         t = 0
         for c in msg:
-            # if isinstance(msg, str):
-            #     t += ord(c)
-            # else:
+            assert isinstance(c, int)
             t += c
         return t & 0xff
 
@@ -39,7 +35,29 @@ class MotorControl(object):
         print(''.join(['    %s' % r for r in response]))
         print('%d lines' % (len(response),))
 
-
 mc = MotorControl()
-mc.send_packet(0, 90)
 
+if False:
+	help = lambda : print('Type two numbers separated by a space, each in [0, 180].')
+	help()
+
+	while True:
+	    print('>>> ', end='')
+	    inp = raw_input()
+	    try:
+	        a, b = inp.split()
+	        mc.send_packet(int(a), int(b))
+	    except ValueError:
+	        help()
+
+else:
+	help = lambda : print('Type one number in [0, 180].')
+	help()
+
+	while True:
+	    print('>>> ', end='')
+	    inp = raw_input()
+	    try:
+	        mc.send_packet(90, int(inp))
+	    except ValueError:
+	        help()
