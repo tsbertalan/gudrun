@@ -33,12 +33,13 @@ class Encoder(object):
 
         WHEEL_CIRCUMFRENCE = (
             3.14159 # circumfrence [diameters]
-            * 2.0   # circumfrence [in]
+            # * 2.0   # circumfrence [in]; indoor wheels
+            * 4.125  # circumfrence [in]; outdoor wheels
             * 2.54  # circumfrence [cm]
             / 100.  # circumfrence [m]
         )
-        GEAR_RATIO = 90.0 / 12.0 / 1.5 # 90 is spur; 12 is pinion; 1.5 quotient is emperical (differential maybe?)
-        ENCODER_CPR = 48.0 # [count/rev]
+        GEAR_RATIO = 90.0 / 12.0 / 1.5 # 90 is spur; 12 is pinion; 1.5 quotient is emperical (differential maybe? Half encoder?)
+        ENCODER_CPR = 20.0 # [count/rev]
         self.CPS_TO_SPEED = (
             1.0                   # motor [count/s]
             / ENCODER_CPR         # motor [rev/s]
