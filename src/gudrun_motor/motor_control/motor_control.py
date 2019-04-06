@@ -2,6 +2,12 @@ from __future__ import print_function
 import serial, time
 from subprocess import check_output
 
+from warnings import warn, simplefilter, catch_warnings
+def warn_always(msg):
+    with catch_warnings():
+        simplefilter('always', UserWarning)
+        warn(msg)
+
 class MotorControl(object):
 
     def __init__(self, PORT=None, BAUDRATE=115200, verbose=False):
@@ -29,16 +35,24 @@ class MotorControl(object):
 
         c = self.checksum([self.HEADER, byte_a, byte_b])
         if self.verbose: print('Sending steering=%s, throttle=%s -> checksum=%s' % (byte_a, byte_b, c))
-        self.ser.write(chr(self.HEADER))
-        self.ser.write(chr(byte_a))
-        self.ser.write(chr(byte_b))
-        self.ser.write(chr(c))
+        try:
+            self.ser.write(chr(self.HEADER))
+            self.ser.write(chr(byte_a))
+            self.ser.write(chr(byte_b))
+            self.ser.write(chr(c))
+        except ValueError:
+            warn_always('Failed to send packet: a=%s (%s) b=%s (%s) chk=%s (%s)' % (
+                byte_a, type(byte_a), byte_b, type(byte_b), c, type(c)
+            ))
         time.sleep(.01)
 
         response = []
         while self.ser.in_waiting > 0:
-            data = self.ser.readline()
-            response.append(data.strip())
+            try:
+                data = self.ser.readline()
+                response.append(data.strip())   
+            except serial.serialutil.SerialException as e:
+                warn_always(str(e))
         if self.verbose:
             if len(response) > 0:
                 print('Response (%d line%s):' % (len(response), '' if len(response) == 1 else 's'))
@@ -47,10 +61,7 @@ class MotorControl(object):
                 print('Response is empty.')
 
         if 'csbad' in response:
-            from warnings import warn, simplefilter, catch_warnings
-            with catch_warnings():
-                simplefilter('always', UserWarning)
-                warn('Motor control firmware reported bad checksum.')
+            warn_always('Motor control firmware reported bad checksum.')
 
 def commandline():
     mc = MotorControl(verbose=1)

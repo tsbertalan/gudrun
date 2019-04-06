@@ -4,7 +4,8 @@ from os import system, getpid
 import time
 
 import sys, termios, tty
-from motor_control.motor_control import MotorControl
+from motor_control.motor_control import MotorControl, warn_always
+
 
 DEBUG_DUMMY = False
 
@@ -46,6 +47,13 @@ class Axis(object):
     
     @fraction.setter
     def fraction(self, fraction):
+        old_fraction = fraction
+        if fraction < -1:
+            fraction = -1
+        if fraction > 1:
+            fraction = 1
+        if fraction != old_fraction:
+            warn_always('Capped input fraction from %s to %s.' % (old_fraction, fraction))
         self._fraction = fraction
         l, m, h = self._ms_points
         if fraction >= 0:
