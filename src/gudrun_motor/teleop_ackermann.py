@@ -39,6 +39,9 @@ class Teleop(object):
         self._steering_angle = self._speed = 0.
 
     def set_steering(self, angle):
+        # TODO: Put this angle reversing responsibility on the TEB controller, not here.
+        if self.message.drive.speed < 0:
+            angle *= -1
         self.message.drive.steering_angle = angle
         self._publish()
 
@@ -70,7 +73,7 @@ def keyboard_teleop():
 
     BUTTON_DELAY = 0.2
     THROTTLE_INCREMENT = .2
-    STEERING_INCREMENT = .25
+    STEERING_INCREMENT = .1
 
     def inc(steering=True, direction=+1):
         if steering:
