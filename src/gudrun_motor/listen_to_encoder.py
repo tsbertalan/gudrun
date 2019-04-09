@@ -2,6 +2,8 @@
 from __future__ import print_function
 from subprocess import check_output
 import serial, time, rospy
+from collections import deque
+from numpy import polyfit
 
 from std_msgs.msg import Header, Int32, Float32
 
@@ -11,7 +13,7 @@ class Encoder(object):
         BAUDRATE = 115200,
         PORT = None,
         # READ_RATE=30, # max speed seen 1670 or so
-        READ_RATE = 20,  # 1639
+        READ_RATE = 15,  # 1639
         # READ_RATE = 10,  # 1552
         ):
         rospy.init_node('listen_to_encoder')
@@ -27,8 +29,8 @@ class Encoder(object):
 
         self.ser = serial.Serial(self.PORT, self.BAUDRATE, timeout=.1)
 
-        self.position_publisher = rospy.Publisher('motor_encoder_count', Int32, queue_size=1)
-        self.speed_publisher = rospy.Publisher('motor_encoder_speed', Float32, queue_size=1)
+        self.position_publisher = rospy.Publisher('motor_encoder/count', Int32, queue_size=1)
+        self.speed_publisher = rospy.Publisher('motor_encoder/velocity', Float32, queue_size=1)
         self.messages = Int32(), Float32()
 
         WHEEL_CIRCUMFRENCE = (
@@ -38,7 +40,7 @@ class Encoder(object):
             * 2.54  # circumfrence [cm]
             / 100.  # circumfrence [m]
         )
-        GEAR_RATIO = 90.0 / 12.0 / 1.5 # 90 is spur; 12 is pinion; 1.5 quotient is emperical (differential maybe? Half encoder?)
+        GEAR_RATIO = 90.0 / 12.0 * 1.35 # 90 is spur; 12 is pinion; final factor is emperical (differential maybe? Half encoder?)
         ENCODER_CPR = 20.0 # [count/rev]
         self.CPS_TO_SPEED = (
             1.0                   # motor [count/s]
@@ -46,6 +48,8 @@ class Encoder(object):
             / GEAR_RATIO          # wheel [rev/s]
             * WHEEL_CIRCUMFRENCE  # wheel [m/s]
         )
+        self.last_times = deque(maxlen=10)
+        self.last_counts = deque(maxlen=10);
 
         self.loop()
 
@@ -54,41 +58,42 @@ class Encoder(object):
         t_last = time.time()
         count_last = 0
         while not rospy.is_shutdown():
-            if self.ser.in_waiting == 0:
-                continue
-            l = ''
-            while self.ser.in_waiting > 0:
-                l = self.ser.readline().strip()
-
-            if len(l.strip()) == 0:
-                # Likely, we hit the serial timeout because the car isn't moving.
-                count = count_last
-
-            else:
-                items = l.split(',')
-                if len(items) == 1:
-                    count = int(items[0])
-                else:
-                    import warnings
-                    warnings.warn('Failed to parse serial line: "%s"' % l)
-                    continue
-
             t = time.time()
+            if self.ser.in_waiting == 0:
+                pass
+            else:
+                l = ''
+                while self.ser.in_waiting > 0:
+                    l = self.ser.readline().strip()
+
+                if len(l.strip()) == 0:
+                    # Likely, we hit the serial timeout because the car isn't moving.
+                    count = count_last
+
+                else:
+                    items = l.split(',')
+                    if len(items) == 1:
+                        count = int(items[0])
+                    else:
+                        from motor_control.motor_control import warn_always
+                        warn_always('Failed to parse serial line: "%s"' % l)
+                self.last_counts.append(count)
+                self.last_times.append(t)
+
             if t - t_last > 1. / self.READ_RATE:
 
-                    dcount = count - count_last
-                    count_last = count
+                counts_per_second, unused_intercept = polyfit(self.last_times, self.last_counts, 1)
+                speed = counts_per_second * self.CPS_TO_SPEED
 
-                    dt = t - t_last
-                    t_last = t
+                # Sometimes we read 0 speed in error every other call; not sure why.
+                # Solve this with some basic smoothing.
+                # self.messages[1].data = self.speed_measurement_smoother(speed)
+                self.messages[1].data = speed
+                self.messages[0].data = count
 
-                    counts_per_second = float(dcount) / dt
-
-                    self.messages[0].data = count
-                    self.messages[1].data = counts_per_second * self.CPS_TO_SPEED
-                    if abs(self.messages[1].data ) < 100:
-                        self.position_publisher.publish(self.messages[0])
-                        self.speed_publisher.publish(self.messages[1])
+                if abs(self.messages[1].data) < 100:
+                    self.position_publisher.publish(self.messages[0])
+                    self.speed_publisher.publish(self.messages[1])
 
         if rospy.is_shutdown():
             print('Caught shutdown signal in listen_to_encoder!')

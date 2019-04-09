@@ -18,7 +18,7 @@ class AckermannMotorController(object):
         self._command = 0
 
         rospy.Subscriber('ackermann_cmd', AckermannDriveStamped, self.callback)
-        rospy.Subscriber('motor_encoder_speed', Float32, self._son_do_you_know_how_fast_you_were_going)
+        rospy.Subscriber('motor_encoder/velocity', Float32, self._son_do_you_know_how_fast_you_were_going)
         self.cp_publisher = rospy.Publisher('speed_control/proportional', Float32, queue_size=10)
         self.ci_publisher = rospy.Publisher('speed_control/integral', Float32, queue_size=10)
         self.cd_publisher = rospy.Publisher('speed_control/derivative', Float32, queue_size=10)
@@ -26,14 +26,14 @@ class AckermannMotorController(object):
         self.pv_publisher = rospy.Publisher('speed_control/measured', Float32, queue_size=10)
         self.cv_publisher = rospy.Publisher('speed_control/control', Float32, queue_size=10)
         self.ce_publisher = rospy.Publisher('speed_control/error', Float32, queue_size=10)
-        self._speed = 0
+        self._velocity = 0
 
         # Set the PID's "sample_time" to smaller than our own likely update speed,
         # so we will compute a new control value every call.
-        self.pid = PID(.5, 0.2, 0, setpoint=0, sample_time=1e-6, output_limits=(0, None), proportional_on_measurement=True)
+        self.pid = PID(.1, 0.2, 0, setpoint=0, sample_time=1e-6, proportional_on_measurement=False)
 
         self.PID_update_timer = rospy.Rate(PID_update_rate)
-        self._cps = self._speed = 0
+        self._cps = self._velocity = 0
 
         self.loop()
 
@@ -41,9 +41,10 @@ class AckermannMotorController(object):
         self._command = message.drive.speed
         steering = message.drive.steering_angle
         if not self._forward:
+            # TODO: Handle this in from the path planning side, if possible, maybe.
             steering *= -1
         self.set_steering(steering)
-        self.set_throttle(abs(message.drive.speed))
+        self.set_throttle(message.drive.speed)
 
         # I'm ignoring, for now, all the velocity/acceleration/jerk parts of the message.
         # It should be noted that the Mini Maestro servo controller does have options for
@@ -54,8 +55,8 @@ class AckermannMotorController(object):
     def _forward(self):
         return self._command >= 0
 
-    def set_throttle(self, speed_target):
-        self.pid.setpoint = speed_target
+    def set_throttle(self, velocity_target):
+        self.pid.setpoint = velocity_target
 
     def set_steering(self, angle):
         # Calibration "curve" is a simple multiplier.
@@ -66,7 +67,7 @@ class AckermannMotorController(object):
         # TODO: Fix the encoder so that we can get direction as well as speed.
         # This approach will work ok, I guess, for incremental changes.
         # But there will certainly be weirdly buggy edge cases.
-        self._speed = msg.data
+        self._velocity = msg.data
 
     def loop(self):
         while not rospy.is_shutdown():
@@ -80,53 +81,55 @@ class AckermannMotorController(object):
         if rospy.is_shutdown():
             print('Caught shutdown signal in ackermann_motor_controller!')
 
-    def update_pid(self):
+    def update_pid(self, MIN_MOTOR=.01):
         command = self._command
-        control = self.pid(self._speed)
-
-        # Ensure the sign of the command always matches the sign of the requested direction.
-        # Our controller is like a gas pedal; always positive. But the lower-level Car
-        # interface expects negative numbers for reverse drive.
-        sign = lambda k: (-1. if k < 0 else 1.)
-        if sign(command) != sign(control):
-            control *= -1.
+        control = self.pid(self._velocity)
 
         if command == 0:
             control = 0
+            # Reset the integral term when stopping.
+            self.pid._integral = 0
+
+        # Ensure the controller doesn't fall to zero (and brake the motor)
+        # just because we're overspeeding.
+        elif command > 0:
+            control = max(control, MIN_MOTOR)
+        else:
+            control = min(control, -MIN_MOTOR)
 
         cp, ci, cd = self.pid.components
         self.cp_publisher.publish(cp)
         self.ci_publisher.publish(ci)
         self.cd_publisher.publish(cd)
 
-        self.sp_publisher.publish(abs(command))
-        self.pv_publisher.publish(self._speed)
-        self.cv_publisher.publish(abs(control))
-        self.ce_publisher.publish(self._speed - abs(command))
+        self.sp_publisher.publish(command)
+        self.pv_publisher.publish(self._velocity)
+        self.cv_publisher.publish(control)
+        self.ce_publisher.publish(self._velocity - command)
 
-        throttle = self.pseudospeed_to_throttle(control)
+        throttle = self.pseudovelocity_to_throttle(control)
         self.car.throttle = throttle
 
     @staticmethod
-    def pseudospeed_to_throttle(pseudospeed):
+    def pseudovelocity_to_throttle(pseudovelocity):
         # Calibration curve for speed=y from throttle=x
         # is given as two lines,
         # one for forward-driving, and one for reverse.
         #y - 0 = m * (x - xb)
         #x = y / m + xb
 
-        m_reverse = 5.204
+        m_reverse = 5.204 * 1
         xb_reverse = -.216
-        m_forward = 6.462
+        m_forward = 6.462 * 1
         xb_forward = .215
-        if pseudospeed == 0:
+        if pseudovelocity == 0:
             return 0
 
-        elif pseudospeed < 0:
-            return pseudospeed / m_reverse + xb_reverse
+        elif pseudovelocity < 0:
+            return pseudovelocity / m_reverse + xb_reverse
 
         else:
-            return pseudospeed / m_forward + xb_forward
+            return pseudovelocity / m_forward + xb_forward
 
 
 if __name__ == '__main__':
