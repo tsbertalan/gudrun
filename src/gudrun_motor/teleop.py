@@ -25,6 +25,11 @@ class Smoother(object):
     def clear(self):
         self.d.clear()
 
+    @property
+    def maxlen(self):
+        return self.d.maxlen
+    
+
 def _set_servo(pin, mc, angle):
     angle = int(angle)
     if pin == 0:

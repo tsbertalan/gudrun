@@ -6,7 +6,7 @@ from std_msgs.msg import Float32
 
 from simple_pid import PID
 
-from teleop import Car
+from teleop import Car, Smoother
 
 class AckermannMotorController(object):
 
@@ -30,7 +30,12 @@ class AckermannMotorController(object):
 
         # Set the PID's "sample_time" to smaller than our own likely update speed,
         # so we will compute a new control value every call.
-        self.pid = PID(.1, 0.2, 0, setpoint=0, sample_time=1e-6, proportional_on_measurement=False)
+        self.pid = PID(1, 0.5, 0.25, setpoint=0, sample_time=1e-6, proportional_on_measurement=False)
+
+        self.input_velocity_smoother = Smoother(1)
+        if self.input_velocity_smoother.maxlen < 8:
+        	# dangerous to  use derivative term with unsmoothed data.
+        	self.pid.Kd = 0
 
         self.PID_update_timer = rospy.Rate(PID_update_rate)
         self._cps = self._velocity = 0
@@ -67,7 +72,10 @@ class AckermannMotorController(object):
         # TODO: Fix the encoder so that we can get direction as well as speed.
         # This approach will work ok, I guess, for incremental changes.
         # But there will certainly be weirdly buggy edge cases.
-        self._velocity = msg.data
+        if self.input_velocity_smoother.maxlen == 1:
+        	self._velocity = msg.data
+    	else:
+        	self._velocity = self.input_velocity_smoother(msg.data)
 
     def loop(self):
         while not rospy.is_shutdown():

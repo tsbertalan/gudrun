@@ -12,9 +12,7 @@ class Encoder(object):
     def __init__(self,
         BAUDRATE = 115200,
         PORT = None,
-        # READ_RATE=30, # max speed seen 1670 or so
-        READ_RATE = 15,  # 1639
-        # READ_RATE = 10,  # 1552
+        READ_RATE = 20,
         ):
         rospy.init_node('listen_to_encoder')
         
@@ -56,9 +54,9 @@ class Encoder(object):
     def loop(self):
 
         t_last = time.time()
-        count_last = 0
+        count_last = count = 0
         while not rospy.is_shutdown():
-            t = time.time()
+            
             if self.ser.in_waiting == 0:
                 pass
             else:
@@ -71,6 +69,7 @@ class Encoder(object):
                     count = count_last
 
                 else:
+                    count_last = count
                     items = l.split(',')
                     if len(items) == 1:
                         count = int(items[0])
@@ -78,9 +77,11 @@ class Encoder(object):
                         from motor_control.motor_control import warn_always
                         warn_always('Failed to parse serial line: "%s"' % l)
                 self.last_counts.append(count)
-                self.last_times.append(t)
+                self.last_times.append(time.time())
 
+            t = time.time()
             if t - t_last > 1. / self.READ_RATE:
+                t_last = t
 
                 counts_per_second, unused_intercept = polyfit(self.last_times, self.last_counts, 1)
                 speed = counts_per_second * self.CPS_TO_SPEED
