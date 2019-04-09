@@ -68,7 +68,7 @@ class Axis(object):
 
 class Car(object):
 
-    def __init__(self, steering_pin=0, throttle_pin=1, dummy=DEBUG_DUMMY, MAX_THROTTLE_ABS=.3):
+    def __init__(self, steering_pin=0, throttle_pin=1, dummy=DEBUG_DUMMY, MAX_THROTTLE_ABS=1):
         self._mc = MotorControl()
 
         self.MAX_THROTTLE_ABS = MAX_THROTTLE_ABS
@@ -78,11 +78,8 @@ class Car(object):
         self.stop()
         self.center()
 
-    def stop(self):
-        self.throttle = 0
-
-    def center(self):
-        self.steering = 0
+        self.smooth_steering = Smoother(5)
+        self.initialized = True
 
     def switch_to_reverse(self):
         if not self._reversing:
@@ -99,6 +96,9 @@ class Car(object):
     @throttle.setter
     def throttle(self, fraction):
 
+        if not getattr(self, 'initialized', False):
+            return
+
         fraction = min(max(fraction, -self.MAX_THROTTLE_ABS), self.MAX_THROTTLE_ABS)
 
         self._throttle = fraction
@@ -108,13 +108,27 @@ class Car(object):
             self._reversing = False
         self._throttle_axis.fraction = fraction
 
+    def stop(self):
+        self.throttle = 0
+
+    def center(self):
+        if getattr(self, 'initialized', False):
+            self.steering = 0
+
     @property
     def steering(self):
         return self._steering_axis.fraction
 
     @steering.setter
     def steering(self, fraction):
-        self._steering_axis.fraction = fraction
+
+        if not getattr(self, 'initialized', False):
+            return
+
+        if fraction == 0 and abs(self._steering_axis.fraction) > .01:
+            self.smooth_steering.clear()
+
+        self._steering_axis.fraction = self.smooth_steering(fraction)
 
     def __del__(self):
         print('Resetting steering and throttle on deletion of %s.' % self)
