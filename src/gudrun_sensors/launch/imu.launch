@@ -1,0 +1,6 @@
+<launch>
+    <!-- Convenience launch file to launch odometry, rtabmap and rtabmapviz nodes at once -->
+    <node pkg="tf" type="static_transform_publisher" name="imu_position" args="0 0 .25 0 0 0 base_link imu 100" />
+
+    <node type="imu_driver.py" name="imu_driver" pkg="gudrun_sensors" output="screen"/>
+</launch>
