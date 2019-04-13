@@ -6,8 +6,6 @@ https://folk.uio.no/jeanra/Microelectronics/TransmitStructArduinoPython.html"""
 from __future__ import print_function
 from serial import Serial
 import struct
-import time, datetime
-import numpy as np
 
 
 def get_port_address(verbose=False):
@@ -77,33 +75,43 @@ class IMU(object):
             yield self.read_one_value()
 
 
+def ros_publish(rate=None):
+    import rospy
+    from sensor_msgs.msg import Imu as Imu_Message
 
+    FRAME_NAME = 'imu'
 
-def main():
+    rospy.init_node('imu')
+
+    publisher = rospy.Publisher('imu', Imu_Message, queue_size=10)
+
+    msg = Imu_Message()
 
     imu = IMU()
 
-    def get_time_micros():
-        return int((datetime.datetime.utcnow() - datetime.datetime(1970, 1, 1)).total_seconds() * 1000000)
-        return(int(round(time.time() * 1000000)))
-        
-    micros = get_time_micros()
 
-    for values in imu.stream():
+    if rate is not None:
+        dt = 1. / rate
+        t_last = rospy.get_time() - dt - 1
 
-        values = tuple(values)
+    while not rospy.is_shutdown():
 
-        current_time = get_time_micros()
-        time_elapsed = current_time - micros
-        micros = current_time
+        data = imu.read_one_value()
 
-        print("Time elapsed since last (us): " + str(time_elapsed))
-        print("------")
-        print("Accelerations: %.2f %.2f %.2f" % values[0:3])
-        print("Angular rates: %.2f %.2f %.2f" % values[3:6])
-        print("Orientation:   %.2f %.2f %.2f" % values[6:9])
-        print (u"{}[2J{}[;H".format(chr(27), chr(27)), end="")  # clear screen https://stackoverflow.com/a/2084521/1224886
+        if rate is not None: t = rospy.get_time()
+
+        if rate is None or t >= t_last + dt:
+            msg.linear_acceleration.x, msg.linear_acceleration.y, msg.linear_acceleration.z = data[0:3]
+            msg.angular_velocity.x, msg.angular_velocity.y, msg.angular_velocity.z = data[3:6]
+            msg.orientation.x, msg.orientation.y, msg.orientation.z = data[6:9]
+
+            msg.header.stamp = rospy.Time.now()
+            msg.header.frame_id = FRAME_NAME
+
+            publisher.publish(msg)
+
+            t_last = rospy.get_time()
 
 
 if __name__ == '__main__':
-    main()
+    ros_publish()
