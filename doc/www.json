@@ -36,6 +36,21 @@
 			"doc/entries/frames.png",
 			"doc/entries/rosgraph.svg"
 		]
-	}
+	},
+    {
+        "content": "doc/entries/arduino_esc_control.md",
+        "title": "Arduino ESC control",
+        "subtitle": "5 April 2019"
+    },
+    {
+        "content": "doc/entries/no_pom.md",
+        "title": "Speed control is not proportional-on-measurment.",
+        "subtitle": "7 April 2019",
+        "files": [
+            "doc/entries/step_change-pom.png",
+            "doc/entries/step_change-nopom.png",
+            "doc/entries/no_pom.png"
+        ]
+    }
 ]
 }

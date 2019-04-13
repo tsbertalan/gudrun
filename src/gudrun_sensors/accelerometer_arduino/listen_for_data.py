@@ -4,66 +4,52 @@
 https://folk.uio.no/jeanra/Microelectronics/TransmitStructArduinoPython.html"""
 
 from __future__ import print_function
-import glob
+from serial import Serial
 import struct
 import time, datetime
 import numpy as np
 
 
-def look_for_available_ports():
-    """
-    find available serial ports to Arduino
-    """
-    available_ports = glob.glob('/dev/ttyACM*')
-    print("Available porst: ")
-    print(available_ports)
+def get_port_address(verbose=False):
+    import os.path
+    from subprocess import check_output
+    
+    ss_config_path = os.path.join(os.path.dirname(__file__), 'device_search_string.txt')
 
-    return available_ports
+    if os.path.isfile(ss_config_path):
+        with open(ss_config_path, 'r') as f:
+            search_string = f.read().strip()
+    else:
+        search_string = 'Arduino_LLC_Arduino_Leonardo_8037:2341'
+        from warnings import warn
+        warn('No %s; using default search string of %s.' % (ss_config_path, search_string))
 
+    if verbose: print('Searching for device "%s" ...' % search_string)
+    
+    cmd = ['rosrun', 'gudrun_sensors', 'get_usb_device_by_ID.py', search_string]
+    if verbose: print('$ ' + ' '.join(cmd))
+    addr = check_output(cmd).strip()
 
-def get_time_micros():
-    return int((datetime.datetime.utcnow() - datetime.datetime(1970, 1, 1)).total_seconds() * 1000000)
-    return(int(round(time.time() * 1000000)))
-
-
-def get_time_millis():
-    return(int(round(time.time() * 1000)))
-
-
-# This looks wrong to me:
-# def get_time_seconds():
-#     return(int(round(time.time() * 1000000)))
-
-
-def print_values(values):
-    print("------")
-    print("Accelerations: ")
-    print(values[0:3])
-    print("Angular rates: ")
-    print(values[3:6])
-    print("Orientation: ")
-    print(values[6:9])
+    if addr == 'device_not_found':
+        raise IOError("Device '%s' wasn't found." % search_string)
+    
+    return addr
 
 
-class ReadFromArduino(object):
-    """A class to read the serial messages from Arduino. The code running on Arduino
-    can for example be the ArduinoSide_LSM9DS0 sketch."""
+class IMU(object):
+    """A class to stream the serial messages from Arduino."""
 
-    def __init__(self, port, SIZE_STRUCT=9*4, verbose=0):
-        self.port = port
-        # self.millis = get_time_millis()
-        self.micros = get_time_micros()
+    def __init__(self, SIZE_STRUCT=9*4, verbose=0):
+        self.port = Serial(get_port_address(), 115200)
+        
         self.SIZE_STRUCT = SIZE_STRUCT
         self.verbose = verbose
-        self.latest_values = -1
-        # self.t_init = get_time_millis()
-        # self.t = 0
-
+        
         self.port.flushInput()
 
     def read_one_value(self):
-        """Wait for next serial message from the Arduino, and read the whole
-        message as a structure."""
+        """Wait for next serial message from the Arduino,
+        and read the whole message as a structure."""
         read = False
 
         while not read:
@@ -72,45 +58,52 @@ class ReadFromArduino(object):
                 data = self.port.read(self.SIZE_STRUCT)
                 myByte = self.port.read(1)
                 if myByte == 'E':
-                    # self.t = (get_time_millis() - self.t_init) / 1000.0
 
                     # is  a valid message struct
-                    new_values = struct.unpack('<fffffffff', data)
-
-                    # current_time = get_time_millis()
-                    # time_elapsed = current_time - self.millis
-                    # self.millis = current_time
-                    current_time = get_time_micros()
-                    time_elapsed = current_time - self.micros
-                    self.micros = current_time
+                    new_values = list(struct.unpack('<fffffffff', data))
 
                     read = True
 
-                    self.latest_values = np.array(new_values)
-
                     # convert measurements to rad/s
-                    self.latest_values[3: 6] = 3.1415 / 180.0 * self.latest_values[3: 6]
+                    for i in range(3, 6):
+                        new_values[i] = 3.1415 / 180.0 * new_values[i]
 
-                    if self.verbose > 1:
-                        # print("Time elapsed since last (ms): " + str(time_elapsed))
-                        print('time [us]:', get_time_micros())
-                        print("Time elapsed since last (us): " + str(time_elapsed))
-                        print_values(new_values)
+                    return new_values
 
-                    return(True)
+        return None
 
-        return(False)
+    def stream(self):
+        while True:
+            yield self.read_one_value()
+
+
+
+
+def main():
+
+    imu = IMU()
+
+    def get_time_micros():
+        return int((datetime.datetime.utcnow() - datetime.datetime(1970, 1, 1)).total_seconds() * 1000000)
+        return(int(round(time.time() * 1000000)))
+        
+    micros = get_time_micros()
+
+    for values in imu.stream():
+
+        values = tuple(values)
+
+        current_time = get_time_micros()
+        time_elapsed = current_time - micros
+        micros = current_time
+
+        print("Time elapsed since last (us): " + str(time_elapsed))
+        print("------")
+        print("Accelerations: %.2f %.2f %.2f" % values[0:3])
+        print("Angular rates: %.2f %.2f %.2f" % values[3:6])
+        print("Orientation:   %.2f %.2f %.2f" % values[6:9])
+        print (u"{}[2J{}[;H".format(chr(27), chr(27)), end="")  # clear screen https://stackoverflow.com/a/2084521/1224886
+
 
 if __name__ == '__main__':
-    from serial import Serial
-    available_ports = look_for_available_ports()
-    if len(available_ports) > 0:
-        port = Serial(available_ports[0], 115200)
-
-        listener = ReadFromArduino(port, verbose=2)
-
-        while True:
-            listener.read_one_value()
-
-    else:
-        print('No serial ports found.')
+    main()
