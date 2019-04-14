@@ -39,7 +39,8 @@ def get_port_address(verbose=False):
 class IMU(object):
     """A class to stream the serial messages from Arduino."""
 
-    def __init__(self, SIZE_STRUCT=9*4, verbose=0):
+    def __init__(self, num_values=9, verbose=0):
+        SIZE_STRUCT = num_values * 4
         self.SIZE_STRUCT = SIZE_STRUCT
         self.verbose = verbose
         try:
@@ -66,7 +67,8 @@ class IMU(object):
                     if myByte == 'E':
 
                         # is  a valid message struct
-                        new_values = list(struct.unpack('<fffffffff', data))
+                        structure = '<' + 'f' * int(self.SIZE_STRUCT / 4)
+                        new_values = list(struct.unpack(structure, data))
 
                         read = True
 
@@ -78,6 +80,11 @@ class IMU(object):
                         # convert micro-Tesla to Tesla
                         for i in range(6, 9):
                             new_values[i] = new_values[i] / 1000.
+
+                        # convert roll,pitch,heading to radians
+                        if len(new_values) > 9:
+                            for i in range(9, 12):
+                                new_values[i] = new_values[i] * 3.14159 / 180.
 
                         return new_values
 
@@ -172,7 +179,12 @@ def ros_publish(rate=None):
     # TODO: Do hard-iron magnetometer compensation.
     publisher_mag_magnitude = rospy.Publisher('imu/mag_magnitude', Float32, queue_size=estimated_frequency)
 
-    imu = IMU()
+    # This needs to match what the firmware is sending (look for the `#define DO_FUSION` line).
+    # Setting to false for now, since the Madgwick code seems to work better,
+    # and doing that computation on the firmware decreases our publish rate
+    # from 250 Hz to "only" about 196 Hz.
+    fetch_device_fused = False
+    imu = IMU(num_values=12 if fetch_device_fused else 9)
 
     # Maybe we throttle; maybe not. Not sure what's best practice here.
     # Also, if we don't read, will earlier piece of the pipeline from the sensor chips buffer??
@@ -205,6 +217,17 @@ def ros_publish(rate=None):
                 msg.angular_velocity.x -= .035
                 msg.angular_velocity.y -= .0125
                 msg.angular_velocity.z -= .01625
+
+                # Though we probably won't use it in the Madgwick filter,
+                #  we'll also extract and publish the firmware's fused orientation.
+                if len(data) > 9:
+                    from tf.transformations import quaternion_from_euler
+                    qx, qy, qz, qw = quaternion_from_euler(*data[9:12])
+                    msg.orientation.x = qx
+                    msg.orientation.y = qy
+                    msg.orientation.z = qz
+                    msg.orientation.w = qw
+
 
                 # Stamp and publish the linear acceleration/angular velocity pseudo-Imu message.
                 msg.header.stamp = rospy.Time.now()

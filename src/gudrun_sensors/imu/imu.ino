@@ -44,6 +44,11 @@ void setup(void) {
   initSensors();
 }
 
+// Since turning this on increases the number of bytes sent,
+// it should match what the receiver expects.
+//
+// However, note that it also makes the loop() here about 33% slower.
+#define DO_FUSION 0
 
 void loop(void) {
 
@@ -52,9 +57,14 @@ void loop(void) {
   sensors_event_t gyro_event;
   sensors_vec_t   orientation;
 
+
   typedef struct {
-    //    acceleration, gyro,     magnetometer
-    float ax, ay, az, gx, gy, gz, mx, my, mz;
+    //    acceleration, gyro,         magnetometer  
+    float ax, ay, az,   gx, gy, gz,   mx, my, mz;
+    #if DO_FUSION==1
+      // "orientation"
+      flot roll, pitch, heading;
+    #endif
   } DataPackage;
   DataPackage package;
 
@@ -64,6 +74,10 @@ void loop(void) {
     mag.getEvent(&mag_event)
     && 
     gyro.getEvent(&gyro_event)
+    #if DO_FUSION==1
+      &&
+      dof.fusionGetOrientation(&accel_event, &mag_event, &orientation)
+    #endif
     ) {
 
     package.ax = accel_event.acceleration.x;
@@ -77,6 +91,12 @@ void loop(void) {
     package.mx = mag_event.magnetic.x;
     package.my = mag_event.magnetic.y;
     package.mz = mag_event.magnetic.z;
+
+    #if DO_FUSION==1
+      package.roll = orientation.roll;
+      package.pitch = orientation.pitch;
+      package.heading = orientation.heading;
+    #endif
 
     Serial.write('S');
     Serial.write((byte*)&package, sizeof(package));
