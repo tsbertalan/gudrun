@@ -6,11 +6,11 @@ The next problem was mounting the Hall-effect sensor carrier board near enough t
 
 Instead, I settled on a design I'm somewhat proud of, that has two adjustable spring-driven height screws. The white plastic pieces, like the struts I cut to replace the car's shocks, are from the housing of a discarded miniblind that I salvaged. A dremel-like cutter, a cordless drill, some glue, and some assorted small pieces of mounting hardware like this are so far an able replacement for a 3D printer for me. In the first design, I warmed the miniblind-plastic with a lighter and then bent it into the U-shape for the bracket, but this tended to weaken it at the corners (and was also a permanent attachment to the motor). Here, I can remove the two side bolts and detach all of the assembly except for the magnet and the two glued-on white side posts.
 
-![encoder_adjustable](encoder_adjustable.jpg)
+<img width=100% src="encoder_adjustable.jpg"/>
 
 I verified that the sensor board was in fact producing a reasonable square wave as the motor spun, and on both channels.
 
-![oscilloscope-crop](oscilloscope-crop.jpg)
+<img width=100% src="oscilloscope-crop.jpg"/>
 
 I then wrote some [fairly simple firmware](https://github.com/tsbertalan/gudrun/blob/b4e12fda30f60cfaba28d79f4093eb3874b4b65c/src/gudrun_motor/encoder/encoder.ino) to watch for these rising and falling edges with interrupts, and then either increment or decrement a counter depending on the state of the two square waves, and their previous state. I could have done this with a bunch of if statements, and it would likely be just as efficient as compilation, but I liked the elegance of doing a little simple bitwise math here, with `symbol = b + (a << 1)`.
 
