@@ -1,6 +1,22 @@
 <launch>
-    <!-- Convenience launch file to launch odometry, rtabmap and rtabmapviz nodes at once -->
-    <node pkg="tf" type="static_transform_publisher" name="imu_position" args="0 0 .25 0 0 0 base_link imu 100" />
-
+	<!-- TODO: Make these transforms make more sense. -->
+    <node pkg="tf" type="static_transform_publisher" name="fake_odom_map" args="0 0 0 0 0 0 map odom 100" />
+    <node pkg="tf" type="static_transform_publisher" name="imu_mount_pose" args="0 .044 -.156 1.57079 0 0 imu base_link 100" />
     <node type="imu_driver.py" name="imu_driver" pkg="gudrun_sensors" output="screen"/>
+
+    <!-- The sensor-fusion performed by the Adafruit libraries is lacking, 
+    so I'll do it instead on the main PC with this package. -->
+    <node type="imu_filter_node" name="imu_filter_node" pkg="imu_filter_madgwick" output="screen">
+    	<param name="gain" value=".2"/>
+    	<param name="stateless" value="false" />
+
+    	<!-- There's a lot of magnetic fields near the sensor, so we'll leave this out for now. 
+		However, eventually, we might want to see if this can be calibrated away.-->
+    	<param name="use_mag" value="false" /> 
+
+    	<!-- TODO: When we integrate this with the visual odometry and the wheel encoders
+    	in robot_localization, then we will stop publishing this tf
+    	and instead let robot_localization handle it. -->
+		<param name="publish_tf" value="true" />
+    </node>
 </launch>
