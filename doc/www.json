@@ -42,7 +42,7 @@
 	}
 	,
 	{
-		"content": "doc/entries/reading encoder values.md",
+		"content": "doc/entries/reading encoder speed.md",
 		"title": "Reading encoder speed",
 		"subtitle": "8 April 2019",
 		"files": [
@@ -53,12 +53,12 @@
 	,
 	{
 		"content": "doc/entries/Using the Adafruit 9DoF with imu_filter_madgwick.md",
-		"title": "Fusing Adafruit 9DoF data with `imu_filter_madgwick`",
+		"title": "Fusing Adafruit 9DoF data with imu_filter_madgwick",
 		"subtitle": "14 April 2019",
 		"files": [
 			"doc/entries/imu_rot.gif",
 			"doc/entries/imu_package.jpg",
-			"doc/entries/breathed_on_gyro.jpg",
+			"doc/entries/breathed_on_gyro.png",
 			"doc/entries/breathed 3.png",
 			"doc/entries/long drift.png",
 			"doc/entries/breathed_2.png",

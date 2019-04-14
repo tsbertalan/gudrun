@@ -1,8 +1,8 @@
-![imu_rot](imu_rot.gif)
+<img src=imu_rot.gif width=100% />
 
 In order to improve upon the visual-only odometry from RTAB-Map, I want to use `robot_localization` to fuse in accelerometer, gyroscope, wheel encoder/steering angle, and maybe magnetometer information. Step one in this is getting reliable accelerometer/gyroscope data from an IMU. I've had a [Adafruit 9DoF IMU](https://www.adafruit.com/product/1714) on hand for a few years, without really making use of it. So, I soldered it to an Arduino Pro Micro, and bolted the breadboard holding both to the car's frame, in an orientation that was easy to express with a manually-constructed `static_transform_publisher` (visible in the gif above) (due to my sloppy construction, this might not be exactly ground-truth accurate, but it's Good Enough).
 
-![imu_package](imu_package.jpg)
+<a href=imu_package.jpg><img src=imu_package.jpg width=100%/></a>
 
 As an aide, these Pro Micros are quickly becoming a favorite of mine for making little USB peripherals. You can get them for about $8 each in packs of three; unlike Pro Minis, they have onboard USB; and they're faster than Nanos (Micro:Nano::Leonardo::Uno). Using a [fairly ugly hack](https://github.com/tsbertalan/gudrun/blob/master/src/gudrun_sensors/upload_with_specified_vid_pid.py) of modifying the boards.txt file before flashing, and restoring the original afterwards, I can modify the vendor and product ID of the devices, and then [search for the corresponding USB device later](https://github.com/tsbertalan/gudrun/blob/master/src/gudrun_sensors/get_usb_device_by_ID.py) when I want to connect it. So, I have now three of these little self-contained USB devices (IMU, encoders, and ESC interface) connected to the main board by six-inch cables (both ends for the IMU are visible in the above photo), and all can be unambiguously identified on every boot, though the `/dev/ttyAM*` order might change.
 
@@ -20,28 +20,28 @@ I monitored the data from this pipeline-so-far in rqt, and found that, at rest, 
 
 Amazingly, after tuning the gyro offsets, I tried simply breathing on the chip, and this was enough to cause a sudden drift.
 
-![](breathed_on_gyro.png)
+<img width=100% src=breathed_on_gyro.png />
 
 Note of course that the vertical scale here is still quite small. (The horizontal axis in all these rqt plots is time in seconds.) It takes about four minutes to come back to its previous temperature, judging by the time it takes for the slope to return to its previous value. Interestingly, when I made the above plot, the slope before breathing was, due to my calibrations, nearly level on this 0.15 vertical scale. As I write this later in the evening, it's neutral slope is decreasing. At first, I thought this was due to the cooling of the evening, and that of course a temperature calibration curve should be written for this (which is what the the extra DoF in the Adafruit 10 DoF would be for). 
 
-![breathed 3](breathed 3.png)
+<img width=100% src="breathed 3.png" />
 
 However, after I let it run over night, it seemed more that the varying slopes (in the orientation channel, at least) were just due to the regular, very slow rotation (with a period of about 1.4 hours).
 
-![long drift](long drift.png)
+<img width=100% src="long drift.png"/>
 
 A better test then would be to record not the fused heading `/imu/data/orientation/z`, but the raw gyroscope data. Maybe later I'll try recording that over a 24 hour period. Plot, say, the absolute value of the gyro readings on a log scale.
 
-![breathed_2](breathed_2.png)
+<img width=100% src="breathed_2.png"/>
 
 This quiescent drift would certainly go away if we incorporated a magnetometer.
 
-![return after breathing with mag](return after breathing with mag.png)
+<img width=100% src="return after breathing with mag.png"/>
 
 Here, I breathed on the sensor at about t=40 seconds, and it returned to its previous orientation (and I expect it will hold this position as long as the magnetic field nearby holds steady).
 
-![gyro no drift with mag](gyro no drift with mag.png)
+<img width=100% src="gyro no drift with mag.png"/>
 
-But that position is likely not one in which North is correct, since a big portion of the sensed magnetic field is due to the nearby permanent magnet in the car's motor. So, I'll need to calibrate that away before setting `use_mag=True` in the `imu_filter_madgwick` settings.
+But that ostensibly "global" orientation is likely not one in which North is correct, since a big portion of the sensed magnetic field is due to the nearby permanent magnet in the car's motor. So, I'll need to calibrate that away before setting `use_mag=True` in the `imu_filter_madgwick` settings.
 
 Now, I need to transform the wheel speed/turning angle into something like a `Twist` odometry message, and get all this data into `robot_localization`.
