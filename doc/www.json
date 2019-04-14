@@ -10,13 +10,15 @@
 		"title": "Simple ultrasound reactive control",
 		"subtitle": "26 February 2019",
 		"files": ["doc/entries/2_small.gif", "doc/entries/1_small.gif"]
-	},
+	}
+	,
 	{
 		"content": "doc/entries/entry2.md",
 		"title": "Architectural plan",
 		"subtitle": "28 February 2019",
 		"files": []
-	},
+	}
+	,
 	{
 		"content": "doc/entries/throttleToVelocity.md",
 		"title": "Open-loop control of speed",
@@ -26,7 +28,8 @@
             "doc/entries/throttle_rates.png",
             "doc/entries/steering.gif"
         ]
-	},
+	}
+	,
 	{
 		"content": "doc/entries/teb.md",
 		"title": "Timed-elastic-band path planning",
@@ -35,6 +38,32 @@
 			"doc/entries/teb_demo.gif",
 			"doc/entries/frames.png",
 			"doc/entries/rosgraph.svg"
+		]
+	}
+	,
+	{
+		"content": "doc/entries/reading encoder values.md",
+		"title": "Reading encoder speed",
+		"subtitle": "8 April 2019",
+		"files": [
+			"doc/entries/encoder_adjustable.jpg",
+			"doc/entries/oscilloscope-crop.jpg"
+		]
+	}
+	,
+	{
+		"content": "doc/entries/Using the Adafruit 9DoF with imu_filter_madgwick.md",
+		"title": "Fusing Adafruit 9DoF data with `imu_filter_madgwick`",
+		"subtitle": "14 April 2019",
+		"files": [
+			"doc/entries/imu_rot.gif",
+			"doc/entries/imu_package.jpg",
+			"doc/entries/breathed_on_gyro.jpg",
+			"doc/entries/breathed 3.png",
+			"doc/entries/long drift.png",
+			"doc/entries/breathed_2.png",
+			"doc/entries/return after breathing with mag.png",
+			"doc/entries/gyro no drift with mag.png"
 		]
 	}
 ]
