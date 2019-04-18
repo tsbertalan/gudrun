@@ -1,0 +1,13 @@
+topics:
+-
+  name    : navigation
+  topic   : nav_vel
+  timeout : 0.5
+  priority: 10
+-
+  name    : keyboard
+  topic   : key_vel
+  timeout : 0.5
+  priority: 90
+
+locks: []

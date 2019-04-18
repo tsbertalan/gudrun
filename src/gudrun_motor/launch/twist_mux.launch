@@ -1,0 +1,6 @@
+<launch>
+  <node pkg="twist_mux" type="twist_mux" name="twist_mux" output="screen">
+    <remap from="cmd_vel_out" to="twist_mux/cmd_vel"/>
+    <rosparam file="$(find gudrun_motor)/launch/twist_mux.yaml" command="load"/>
+  </node>
+</launch>
