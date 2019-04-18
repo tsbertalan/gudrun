@@ -6,17 +6,19 @@
 "starred": 1,
 "entries": [
 	{
-		"content": "doc/entries/entry1.md",
-		"title": "Simple ultrasound reactive control",
-		"subtitle": "26 February 2019",
-		"files": ["doc/entries/2_small.gif", "doc/entries/1_small.gif"]
-	}
-	,
-	{
 		"content": "doc/entries/entry2.md",
 		"title": "Architectural plan",
 		"subtitle": "28 February 2019",
 		"files": []
+	}
+	,
+	{
+		"content": "doc/entries/entry1.md",
+		"title": "Simple ultrasound reactive control",
+		"subtitle": "26 February 2019",
+		"files": ["doc/entries/2_small.gif", "doc/entries/1_small.gif", "doc/headshot.jpg"],
+		"sourceLink": "https://github.com/tsbertalan/gudrun/blob/e97884981db013f3aa4c19ab76b945c4a900e525/src/gudrun_planning/launch/reactive_optimization.launch",
+		"sourceLinkText": "ROS Launch File"
 	}
 	,
 	{
@@ -27,7 +29,9 @@
             "doc/entries/sample_experiment.png", 
             "doc/entries/throttle_rates.png",
             "doc/entries/steering.gif"
-        ]
+        ],
+        "sourceLink": "https://github.com/tsbertalan/gudrun/blob/6ea7cf28d464666a8214b163e789784f5b21e4da/src/gudrun_motor/speed_record_data/Speed%20Record%20Data.ipynb",
+        "sourceLinkText": "Jupyter Notebook"
 	}
 	,
 	{
@@ -38,7 +42,9 @@
 			"doc/entries/teb_demo.gif",
 			"doc/entries/frames.png",
 			"doc/entries/rosgraph.svg"
-		]
+		],
+		"sourceLink": "https://github.com/tsbertalan/gudrun/blob/62c522b9abaceca054bea61d9ecab84c60795c52/src/gudrun_planning/launch/path_planning.launch",
+		"sourceLinkText": "ROS Launch File"
 	}
 	,
 	{
@@ -48,7 +54,9 @@
 		"files": [
 			"doc/entries/encoder_adjustable.jpg",
 			"doc/entries/oscilloscope-crop.jpg"
-		]
+		],
+		"sourceLink": "https://github.com/tsbertalan/gudrun/blob/71e8e23e595c797440d2f6054432db6aab79df26/src/gudrun_motor/launch/encoder.launch",
+		"sourceLinkText": "ROS Launch File"
 	}
 	,
 	{
@@ -64,7 +72,9 @@
 			"doc/entries/breathed_2.png",
 			"doc/entries/return after breathing with mag.png",
 			"doc/entries/gyro no drift with mag.png"
-		]
+		],
+		"sourceLink": "https://github.com/tsbertalan/gudrun/tree/013200dd2a754738b1cc4b32b2739114e999bb7c/src/gudrun_sensors/imu",
+		"sourceLinkText": "Relevant files"
 	}
 ]
 }

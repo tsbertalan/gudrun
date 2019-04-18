@@ -14,11 +14,11 @@ For that matter, this is also true of the [magnetometer](https://github.com/adaf
 
 So, I wrote firmware that packaged up the accelerometer, gyroscope, and magnetometer into a 9-float struct, preceded that by an `S` byte, used `serial.write` to put that onto the USB, and then used an `E` byte to mark the end of the packet. I read this into Python on the PC side using `floats = struct.unpack('<fffffffff', bytes)`, did some unit conversions, and populated my ROS messages with this data.
 
-To keep my options open, I also wrote code to publish the firmware-fused orientation, using `tf.transformations.quaternion_from_euler` to convert it to the quaternion expected for `Imu.orientation.[x,y,z,w]`. However, `quaternion_from_euler` rightly has a second argument for specifiying which of the 24 valid Euler conventions the input uses, and I don't know what to tell it. So, I suspect the generated quaternion might be garbage, but haven't checked. What I *have*  checked is the publish rate with and without this option enabled, and it seems that this brings us from 260 Hz down to about 150 Hz. So, It's disable for now.
+To keep my options open, I also wrote code to publish the firmware-fused orientation, using `tf.transformations.quaternion_from_euler` to convert it to the quaternion expected for `Imu.orientation.[x,y,z,w]`. However, `quaternion_from_euler` rightly has a second argument for specifiying which of the 24 valid Euler conventions the input uses, and I don't know what to tell it. So, I suspect the generated quaternion might be garbage, but haven't checked. What I *have*  checked is the publish rate with and without this option enabled, and it seems that this brings us from 260 Hz down to about 150 Hz. So, it's disabled for now.
 
-I monitored the data from this pipeline-so-far in rqt, and found that, at rest, the three gyro components were nonzero. So, I subtracted their unadjusted quiescent values from the device-reported values before publishing. Without this, there was steady and visible heading-drift over time.
+I monitored the data from this pipeline-so-far in rqt, and found that, at rest, the three gyro components were nonzero. So, I subtracted their unadjusted quiescent levels before publishing. Without this, there was steady and visible heading-drift over time.
 
-Amazingly, after tuning the gyro offsets, I tried simply breathing on the chip, and this was enough to cause a sudden drift.
+Amazingly, after tuning the gyro offsets, I tried simply breathing on the chip, and this warming was enough to cause a sudden drift.
 
 <img width=100% src=breathed_on_gyro.png />
 
@@ -30,15 +30,15 @@ However, after I let it run over night, it seemed more that the varying slopes (
 
 <img width=100% src="long drift.png"/>
 
-A better test then would be to record not the fused heading `/imu/data/orientation/z`, but the raw gyroscope data. Maybe later I'll try recording that over a 24 hour period. Plot, say, the absolute value of the gyro readings on a log scale.
+A better test then would be to record not the fused heading `/imu/data/orientation/z`, but the raw gyroscope data. Maybe later I'll try recording that over a 24 hour period. I'd plot, say, the absolute value of the gyro readings on a log scale.
 
 <img width=100% src="breathed_2.png"/>
 
-This quiescent drift would certainly go away if we incorporated a magnetometer.
+This quiescent drift would certainly go away if we incorporated a magnetometer, as I did temporarily for the following plot.
 
 <img width=100% src="return after breathing with mag.png"/>
 
-Here, I breathed on the sensor at about t=40 seconds, and it returned to its previous orientation (and I expect it will hold this position as long as the magnetic field nearby holds steady).
+Here, I breathed on the sensor at about t=40 seconds, and it promptly returned to its previous orientation (and I expect it will hold this position as long as the magnetic field nearby holds steady).
 
 <img width=100% src="gyro no drift with mag.png"/>
 

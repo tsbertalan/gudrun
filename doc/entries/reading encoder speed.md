@@ -14,46 +14,47 @@ I verified that the sensor board was in fact producing a reasonable square wave 
 
 I then wrote some [fairly simple firmware](https://github.com/tsbertalan/gudrun/blob/b4e12fda30f60cfaba28d79f4093eb3874b4b65c/src/gudrun_motor/encoder/encoder.ino) to watch for these rising and falling edges with interrupts, and then either increment or decrement a counter depending on the state of the two square waves, and their previous state. I could have done this with a bunch of if statements, and it would likely be just as efficient as compilation, but I liked the elegance of doing a little simple bitwise math here, with `symbol = b + (a << 1)`.
 
-```c++
-volatile long count;
-volatile byte last_symbol, symbol, a, b;
+    :::c++
+    volatile long count;
+    volatile byte last_symbol, symbol, a, b;
 
-const int PIN_A = 2;
-const int PIN_B = 3;
+    const int PIN_A = 2;
+    const int PIN_B = 3;
 
-// Current byte     ->       0b00, 0b01, 0b10, 0b11
-// Previous byte:
-const byte fwd_sources[4] = {0b10, 0b00, 0b11, 0b01};
-const byte rev_sources[4] = {0b01, 0b11, 0b00, 0b10};
+    // Current byte     ->       0b00, 0b01, 0b10, 0b11
+    // Previous byte:
+    const byte fwd_sources[4] = {0b10, 0b00, 0b11, 0b01};
+    const byte rev_sources[4] = {0b01, 0b11, 0b00, 0b10};
 
-void isr() {
-	a = digitalRead(PIN_A);
-	b = digitalRead(PIN_B);
-	symbol = b + (a << 1);
-	if(fwd_sources[symbol] == last_symbol) {
-		count++;
-	}
-	if(rev_sources[symbol] == last_symbol) {
-		count--;
-	}
-	last_symbol = symbol;	
-}
+    void isr() {
+        a = digitalRead(PIN_A);
+        b = digitalRead(PIN_B);
+        symbol = b + (a << 1);
+        if(fwd_sources[symbol] == last_symbol) {
+            count++;
+        }
+        if(rev_sources[symbol] == last_symbol) {
+            count--;
+        }
+        last_symbol = symbol;	
+    }
 
-void setup() {
-	Serial.begin(115200);
-	pinMode(PIN_A, INPUT_PULLUP);
-	pinMode(PIN_B, INPUT_PULLUP);
-	attachInterrupt(digitalPinToInterrupt(PIN_A), isr, CHANGE);
-	attachInterrupt(digitalPinToInterrupt(PIN_B), isr, CHANGE);
-	count = 0;
-}
-void loop() {
-	if ( millis() % 10 == 0) {
-		Serial.println(count);
-	}
-}
-```
-That is, there are two distinct sequences of two-bit symbols for foward or reverse motion, and we can read these symbols into a single byte (a smaller type would also do, but apparently [semi-nibbles](https://en.wikipedia.org/wiki/Units_of_information#Obsolete_and_unusual_units) aren't a standard compiler-recognized type). Since we can also index with these, I make two tiny look-up-tables for what byte we would be coming from, given the current byte as index, in the two hypothetical situations where we're going forward or reverse. If neither matches (probably damaged hardware, or a bad airgap between magnet and sensor, interference by the `Serial` call, or something like that), we do nothing.
+    void setup() {
+        Serial.begin(115200);
+        pinMode(PIN_A, INPUT_PULLUP);
+        pinMode(PIN_B, INPUT_PULLUP);
+        attachInterrupt(digitalPinToInterrupt(PIN_A), isr, CHANGE);
+        attachInterrupt(digitalPinToInterrupt(PIN_B), isr, CHANGE);
+        count = 0;
+    }
+    void loop() {
+        if ( millis() % 10 == 0) {
+            Serial.println(count);
+        }
+    }
+
+
+That is, there are two distinct sequences of two-bit symbols for foward or reverse motion, and we can read these symbols into a single byte (a smaller type would also do, but apparently [semi-nibbles](https://en.wikipedia.org/wiki/Units_of_information#Obsolete_and_unusual_units) aren't a standard compiler-recognized type). Since we can also index with these, I make two tiny look-up-tables for what byte we would be coming from, given the current byte as index, in the two hypothetical situations where we're going forward or reverse. If neither matches (probably damaged hardware, or a bad gap size between magnet and sensor, interference by the `Serial` call, or something like that), we do nothing.
 
 I then dumped this count periodically to serial. For this, I just used `Serial.prinln`. For the various Arduino data interfaces in this project, I seem to use a different ad-hoc protocol each time, sometimes with good efficiency (sending structs as byte sequences), sometimes reliability (requiring valid checksum after the . data). This way has neither of these properties. Eventually, I should unify all these in a tiny protocol, which could probably sit in a single short header file, and accompanying Python module. But whatever, this is good enough for now.
 
