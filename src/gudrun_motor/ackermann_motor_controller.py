@@ -7,7 +7,7 @@ from geometry_msgs.msg import TwistWithCovarianceStamped
 
 from simple_pid import PID
 
-from teleop import Car, Smoother
+from motor_control.motor_control import Car, Smoother
 
 class AckermannMotorController(object):
 

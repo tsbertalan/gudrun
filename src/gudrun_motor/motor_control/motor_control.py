@@ -1,12 +1,23 @@
+
 from __future__ import print_function
-import serial, time
+import sys, termios, tty, serial, time
+from os import system, getpid
 from subprocess import check_output
 
-from warnings import warn, simplefilter, catch_warnings
-def warn_always(msg):
-    import rospy
-    rospy.logwarn(msg)
-    
+from motor_control.motor_control import MotorControl
+
+
+def rospy_log(kind, *a, **k):
+    from rospy import logwarn, logerr, loginfo
+    if kind == 'WARN':
+        logwarn(*a, **k)
+    elif kind == 'ERR':
+        logwarn(*a, **k)
+    elif kind == 'INFO':
+        logwarn(*a, **k)
+    else:
+        raise ValueError('Argument "kind"=%s should be one of "WARN", "ERR", or "INFO".')
+
 
 class MotorControl(object):
 
@@ -41,7 +52,7 @@ class MotorControl(object):
             self.ser.write(chr(byte_b))
             self.ser.write(chr(c))
         except ValueError:
-            warn_always('Failed to send packet: a=%s (%s) b=%s (%s) chk=%s (%s)' % (
+            rospy_log('ERR', 'Failed to send packet: a=%s (%s) b=%s (%s) chk=%s (%s)' % (
                 byte_a, type(byte_a), byte_b, type(byte_b), c, type(c)
             ))
         time.sleep(.01)
@@ -52,14 +63,15 @@ class MotorControl(object):
                 data = self.ser.readline()
                 response.append(data.strip())   
             except serial.serialutil.SerialException as e:
-                warn_always(str(e))
+                rospy_log('ERR', str(e))
         if self.verbose:
             if len(response) > 0:
                 print('Response (%d line%s):' % (len(response), '' if len(response) == 1 else 's'))
                 print('\n'.join(['> %s' % r for r in response]))
 
         if 'csbad' in response:
-            warn_always('Motor control firmware reported bad checksum.')
+            rospy_log('ERR', 'Motor control firmware reported bad checksum.')
+
 
 def commandline():
     mc = MotorControl(verbose=1)
@@ -92,6 +104,138 @@ def commandline():
         except EOFError:
             print('ctrl+d')
             break
+
+
+DEBUG_DUMMY = False
+
+
+class Smoother(object):
+
+    def __init__(self, N=10):
+        import numpy as np
+        from collections import deque
+        self.d = deque(maxlen=N)
+
+    def __call__(self, x):
+        import numpy as np
+        self.d.append(x)
+        return np.mean(self.d)
+
+    def clear(self):
+        self.d.clear()
+
+    @property
+    def maxlen(self):
+        return self.d.maxlen
+    
+
+def _set_servo(pin, mc, angle):
+    angle = int(angle)
+    if pin == 0:
+        mc.send_packet(byte_a=angle)
+    else:
+        mc.send_packet(byte_b=angle)
+
+
+class Axis(object):
+
+    def __init__(self, pin, motor_control_connection, zero_point=90, low_point=0, high_point=180, dummy=False):
+        self._pin = pin
+        self._mc = motor_control_connection
+        self._ms_points = low_point, zero_point, high_point
+        self._dummy = dummy
+        self.fraction = 0
+
+    @property
+    def fraction(self):
+        return self._fraction
+    
+    @fraction.setter
+    def fraction(self, fraction):
+        old_fraction = fraction
+        if fraction < -1:
+            fraction = -1
+        if fraction > 1:
+            fraction = 1
+        if fraction != old_fraction:
+           rospy_log('WARN', 'Capped input fraction from %s to %s.' % (old_fraction, fraction))
+        self._fraction = fraction
+        l, m, h = self._ms_points
+        if fraction >= 0:
+            angle = fraction * (h - m) + m
+        else:
+            angle = fraction * (m - l) + m
+        if not self._dummy:
+            _set_servo(self._pin, self._mc, angle)
+        else:
+            print('(Set servo %d to %s ms)' % (self._pin, ms))
+
+
+class Car(object):
+
+    def __init__(self, steering_pin=0, throttle_pin=1, dummy=DEBUG_DUMMY, MAX_THROTTLE_ABS=1):
+        self._mc = MotorControl()
+
+        self.MAX_THROTTLE_ABS = MAX_THROTTLE_ABS
+        self._steering_axis = Axis(steering_pin, self._mc, dummy=dummy)
+        self._throttle_axis = Axis(throttle_pin, self._mc, dummy=dummy)
+        self._reversing = False
+        self.stop()
+        self.center()
+
+        self.initialized = True
+
+    def switch_to_reverse(self):
+        if not self._reversing:
+            self._throttle_axis.fraction = -.1
+            time.sleep(.05)
+            self._throttle_axis.fraction = 0
+            time.sleep(.05)
+            self._reversing = True
+
+    @property
+    def throttle(self):
+        return self._throttle
+
+    @throttle.setter
+    def throttle(self, fraction):
+
+        if not getattr(self, 'initialized', False):
+            return
+
+        fraction = min(max(fraction, -self.MAX_THROTTLE_ABS), self.MAX_THROTTLE_ABS)
+
+        self._throttle = fraction
+        if fraction < 0:
+            self.switch_to_reverse()
+        else:
+            self._reversing = False
+        self._throttle_axis.fraction = fraction
+
+    def stop(self):
+        self.throttle = 0
+
+    def center(self):
+        if getattr(self, 'initialized', False):
+            self.steering = 0
+
+    @property
+    def steering(self):
+        return self._steering_axis.fraction
+
+    @steering.setter
+    def steering(self, fraction):
+
+        if not getattr(self, 'initialized', False):
+            return
+
+        self._steering_axis.fraction = fraction
+
+    def __del__(self):
+        print('Resetting steering and throttle on deletion of %s.' % self)
+        self.stop()
+        self.center()
+    
 
 if __name__ == '__main__':
     commandline()

@@ -1,142 +1,3 @@
-#!/usr/bin/env python
-from __future__ import print_function
-from os import system, getpid
-import time
-
-import sys, termios, tty
-from motor_control.motor_control import MotorControl, warn_always
-
-
-DEBUG_DUMMY = False
-
-
-class Smoother(object):
-
-    def __init__(self, N=10):
-        import numpy as np
-        from collections import deque
-        self.d = deque(maxlen=N)
-
-    def __call__(self, x):
-        import numpy as np
-        self.d.append(x)
-        return np.mean(self.d)
-
-    def clear(self):
-        self.d.clear()
-
-    @property
-    def maxlen(self):
-        return self.d.maxlen
-    
-
-def _set_servo(pin, mc, angle):
-    angle = int(angle)
-    if pin == 0:
-        mc.send_packet(byte_a=angle)
-    else:
-        mc.send_packet(byte_b=angle)
-
-class Axis(object):
-
-    def __init__(self, pin, motor_control_connection, zero_point=90, low_point=0, high_point=180, dummy=False):
-        self._pin = pin
-        self._mc = motor_control_connection
-        self._ms_points = low_point, zero_point, high_point
-        self._dummy = dummy
-        self.fraction = 0
-
-    @property
-    def fraction(self):
-        return self._fraction
-    
-    @fraction.setter
-    def fraction(self, fraction):
-        old_fraction = fraction
-        if fraction < -1:
-            fraction = -1
-        if fraction > 1:
-            fraction = 1
-        if fraction != old_fraction:
-            warn_always('Capped input fraction from %s to %s.' % (old_fraction, fraction))
-        self._fraction = fraction
-        l, m, h = self._ms_points
-        if fraction >= 0:
-            angle = fraction * (h - m) + m
-        else:
-            angle = fraction * (m - l) + m
-        if not self._dummy:
-            _set_servo(self._pin, self._mc, angle)
-        else:
-            print('(Set servo %d to %s ms)' % (self._pin, ms))
-
-
-class Car(object):
-
-    def __init__(self, steering_pin=0, throttle_pin=1, dummy=DEBUG_DUMMY, MAX_THROTTLE_ABS=1):
-        self._mc = MotorControl()
-
-        self.MAX_THROTTLE_ABS = MAX_THROTTLE_ABS
-        self._steering_axis = Axis(steering_pin, self._mc, dummy=dummy)
-        self._throttle_axis = Axis(throttle_pin, self._mc, dummy=dummy)
-        self._reversing = False
-        self.stop()
-        self.center()
-
-        self.initialized = True
-
-    def switch_to_reverse(self):
-        if not self._reversing:
-            self._throttle_axis.fraction = -.1
-            time.sleep(.05)
-            self._throttle_axis.fraction = 0
-            time.sleep(.05)
-            self._reversing = True
-
-    @property
-    def throttle(self):
-        return self._throttle
-
-    @throttle.setter
-    def throttle(self, fraction):
-
-        if not getattr(self, 'initialized', False):
-            return
-
-        fraction = min(max(fraction, -self.MAX_THROTTLE_ABS), self.MAX_THROTTLE_ABS)
-
-        self._throttle = fraction
-        if fraction < 0:
-            self.switch_to_reverse()
-        else:
-            self._reversing = False
-        self._throttle_axis.fraction = fraction
-
-    def stop(self):
-        self.throttle = 0
-
-    def center(self):
-        if getattr(self, 'initialized', False):
-            self.steering = 0
-
-    @property
-    def steering(self):
-        return self._steering_axis.fraction
-
-    @steering.setter
-    def steering(self, fraction):
-
-        if not getattr(self, 'initialized', False):
-            return
-
-        self._steering_axis.fraction = fraction
-
-    def __del__(self):
-        print('Resetting steering and throttle on deletion of %s.' % self)
-        self.stop()
-        self.center()
-    
-
 def keyboard_teleop():
     def getch():
         fd = sys.stdin.fileno()
@@ -207,7 +68,6 @@ def keyboard_teleop():
             action()
         # else:
         #     print('Got unknown char "%s".' % char)
-
 
 import multiprocessing
 def _monitor_ping(server, ping_timeout=1):
@@ -372,6 +232,7 @@ def mouse_teleop():
             
             if exit:
                 break
+
 
 if __name__ == '__main__':
     keyboard_teleop()

@@ -74,8 +74,7 @@ class Encoder(object):
                     if len(items) == 1:
                         count = int(items[0])
                     else:
-                        from motor_control.motor_control import warn_always
-                        warn_always('Failed to parse serial line: "%s"' % l)
+                        rospy.logerr('Failed to parse serial line: "%s"' % l)
                 self.last_counts.append(count)
                 self.last_times.append(time.time())
 
