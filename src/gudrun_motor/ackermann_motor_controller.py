@@ -66,16 +66,45 @@ class AckermannMotorController(object):
     def set_steering(self, angle):
         # Calibration "curve" is a simple multiplier.
         # Since "car" takes positive to be right turn, we flip the sign.
-        self.car.steering = -angle * 1.65849761
+
+        fraction = -angle * self.ANGLE_SCALING
+
+        if fraction == 0 and abs(self.car.steering) > .01:
+            self.command_steering_smoother.clear()
+
+        self.car.steering = self.command_steering_smoother(fraction)
+
+    def publish_odometry(self):
+        v = self._velocity
+
+        angle = -self.car.steering / self.ANGLE_SCALING
+        if self._velocity == 0 or angle == 0:
+            omega = 0
+        else:
+            # angle = math.atan(wheelbase / radius)
+            radius = self.WHEELBASE / math.tan(angle)
+            omega = v / radius
+
+        msg = self.odometry_message
+        twist = msg.twist.twist
+        twist.angular.z = omega
+        twist.linear.x = v
+        msg.header.stamp = rospy.Time.now()
+        self.odometry_publisher.publish(msg)
 
     def _son_do_you_know_how_fast_you_were_going(self, msg):
         # TODO: Fix the encoder so that we can get direction as well as speed.
         # This approach will work ok, I guess, for incremental changes.
         # But there will certainly be weirdly buggy edge cases.
+
+        if not getattr(self, 'initialized', False):
+            return None
+
         if self.input_velocity_smoother.maxlen == 1:
         	self._velocity = msg.data
     	else:
         	self._velocity = self.input_velocity_smoother(msg.data)
+        self.publish_odometry()
 
     def loop(self):
         while not rospy.is_shutdown():

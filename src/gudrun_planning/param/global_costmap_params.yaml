@@ -4,10 +4,13 @@ global_costmap:
   update_frequency: 0.5
   publish_frequency: 0.5
   static_map: false
-  transform_tolerance: 0.5
+  transform_tolerance: 1.0
+
+  height: 20
+  width: 20
 
   inflation_layer:
-    inflation_radius: 0.25
+    inflation_radius: 0.1
 
   plugins:
      - {name: static_layer,            type: "costmap_2d::StaticLayer"}

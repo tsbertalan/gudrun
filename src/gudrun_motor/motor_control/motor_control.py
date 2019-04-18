@@ -57,8 +57,6 @@ class MotorControl(object):
             if len(response) > 0:
                 print('Response (%d line%s):' % (len(response), '' if len(response) == 1 else 's'))
                 print('\n'.join(['> %s' % r for r in response]))
-            else:
-                print('Response is empty.')
 
         if 'csbad' in response:
             warn_always('Motor control firmware reported bad checksum.')

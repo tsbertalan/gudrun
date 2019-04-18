@@ -83,7 +83,6 @@ class Car(object):
         self.stop()
         self.center()
 
-        self.smooth_steering = Smoother(5)
         self.initialized = True
 
     def switch_to_reverse(self):
@@ -130,10 +129,7 @@ class Car(object):
         if not getattr(self, 'initialized', False):
             return
 
-        if fraction == 0 and abs(self._steering_axis.fraction) > .01:
-            self.smooth_steering.clear()
-
-        self._steering_axis.fraction = self.smooth_steering(fraction)
+        self._steering_axis.fraction = fraction
 
     def __del__(self):
         print('Resetting steering and throttle on deletion of %s.' % self)
