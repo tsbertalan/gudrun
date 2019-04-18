@@ -4,9 +4,9 @@ from subprocess import check_output
 
 from warnings import warn, simplefilter, catch_warnings
 def warn_always(msg):
-    with catch_warnings():
-        simplefilter('always', UserWarning)
-        warn(msg)
+    import rospy
+    rospy.logwarn(msg)
+    
 
 class MotorControl(object):
 

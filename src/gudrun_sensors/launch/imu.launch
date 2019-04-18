@@ -1,7 +1,8 @@
 <launch>
 	<!-- TODO: Make these transforms make more sense. -->
-    <node pkg="tf" type="static_transform_publisher" name="fake_odom_map" args="0 0 0 0 0 0 map odom 100" />
-    <node pkg="tf" type="static_transform_publisher" name="imu_mount_pose" args="0 .044 -.156 1.57079 0 0 imu base_link 100" />
+    <node pkg="tf" type="static_transform_publisher" name="imu_mount_pose" args="-.044 0 .156 -1.57079 .1  -0.05  base_link imu_link 100" />
+    <!-- <node pkg="tf" type="static_transform_publisher" name="imu_mount_pose" args="0 .044 -.156 1.57079 0.05 -.1   imu_link base_link 100" /> -->
+    
     <node type="imu_driver.py" name="imu_driver" pkg="gudrun_sensors" output="screen"/>
 
     <!-- The sensor-fusion performed by the Adafruit libraries is lacking, 
@@ -12,11 +13,17 @@
 
     	<!-- There's a lot of magnetic fields near the sensor, so we'll leave this out for now. 
 		However, eventually, we might want to see if this can be calibrated away.-->
-    	<param name="use_mag" value="false" /> 
+    	<param name="use_mag" value="false" />
 
-    	<!-- TODO: When we integrate this with the visual odometry and the wheel encoders
-    	in robot_localization, then we will stop publishing this tf
-    	and instead let robot_localization handle it. -->
-		<param name="publish_tf" value="true" />
+        <param name="orientation_stddev" value="0.001" />
+
+        <remap from="imu/data_raw" to="/imu/data_raw" />
+        <remap from="imu/mag" to="/imu/mag" />
+
+        <!-- For diagnostiic purposes, first of these could be set to true: -->
+        <param name="publish_tf" value="false" /> 
+        <param name="reverse_tf" value="true" />
+
+        <param name="fixed_frame" value="odom" />
     </node>
 </launch>

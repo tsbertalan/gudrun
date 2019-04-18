@@ -1,18 +1,19 @@
 <!--Read a pose objectives topic and translate these moment-by-moment into movement commands.-->
 <launch>
-    <node pkg="tf" type="static_transform_publisher" name="kinect_position" args="-.305 0 -.127 0 0 0 camera_link base_link 100" /> 
+		 
 
-    <!-- <node pkg="global_planner" type="planner" respawn="false" name="planner" output="screen">
+		<!-- <node pkg="global_planner" type="planner" respawn="false" name="planner" output="screen">
     	<remap from="/rtabmap/grid_map" to="/map"/>
     	<param name="visualize_potential" value="true" />
     </node> -->
 
-    <!-- <group ns="planner"> -->
-      <!-- <remap from="openni_points" to="/camera/depth_registered/points"/> -->
-      <!-- <remap from="openni_points" to="/rtabmap/cloud_obstacles"/> -->
-      <remap from="openni_points" to="/rtabmap/octomap_obstacles"/>
-      <remap from="map" to="/rtabmap/grid_map"/>
-      <!-- <remap from="move_base_simple/goal" to="/planner_goal"/> -->
+		<!-- <group ns="planner"> -->
+			<!-- <remap from="openni_points" to="/camera/depth_registered/points"/> -->
+			<!-- <remap from="openni_points" to="/rtabmap/cloud_obstacles"/> -->
+			<!-- <remap from="openni_points" to="/rtabmap/octomap_obstacles"/> -->
+			<!-- <remap from="scan" to="/scan" /> -->
+			<remap from="map" to="/rtabmap/grid_map"/>
+			<!-- <remap from="move_base_simple/goal" to="/planner_goal"/> -->
         
       <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
 

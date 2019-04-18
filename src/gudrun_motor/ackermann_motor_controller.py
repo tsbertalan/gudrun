@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 from __future__ import print_function
-import rospy
+import rospy, math
 from ackermann_msgs.msg import AckermannDriveStamped
 from std_msgs.msg import Float32
+from geometry_msgs.msg import TwistWithCovarianceStamped
 
 from simple_pid import PID
 
@@ -37,8 +38,27 @@ class AckermannMotorController(object):
         	# dangerous to  use derivative term with unsmoothed data.
         	self.pid.Kd = 0
 
+        self.command_steering_smoother = Smoother(1)
+        self.ANGLE_SCALING = 1.65849761
+
         self.PID_update_timer = rospy.Rate(PID_update_rate)
         self._cps = self._velocity = 0
+
+        self.odometry_message = TwistWithCovarianceStamped()
+        
+        # Static covariance.
+        # Row-major representation of the 6x6 covariance matrix
+        # The orientation parameters use a fixed-axis representation.
+        # In order, the parameters are:
+        # (x, y, z, rotation about X axis, rotation about Y axis, rotation about Z axis)
+        diagonal = [.05, .02, .02,   .02, .02, .15]
+        for r, v in enumerate(diagonal):
+            self.odometry_message.twist.covariance[r + r * len(diagonal)] = v
+
+        self.odometry_publisher = rospy.Publisher('controller_odom/twist_actual', TwistWithCovarianceStamped, queue_size=5)
+        self.WHEELBASE = rospy.get_param('~wheelbase', .355)
+
+        self.initialized = True
 
         self.loop()
 

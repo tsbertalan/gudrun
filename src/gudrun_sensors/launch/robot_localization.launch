@@ -1,0 +1,137 @@
+<launch>
+    <node name="ekf_localization_node" pkg="robot_localization" type="ekf_localization_node">
+        <!-- Based on Tom Moore's talk at ROSCon 2015: https://vimeo.com/142624091 -->
+
+        <param name="frequency" value="50"/>
+        <param name="sensor_timeout" value="0.1"/>
+        <param name="two_d_mode" value="false"/>
+
+        <!-- <param name="map_frame" value="map"/> -->
+        <param name="odom_frame" value="odom"/>
+        <param name="base_link_frame" value="base_link"/>
+
+        <param name="world_frame" value="odom"/>
+
+        <param name="transform_time_offset" value="0.0"/>
+
+
+        <!-- Note that we give all three of vx, vy, vz even though the motor controller
+        can only truly report vx, since, as X X says, "even though the robot probably isn't
+        going to give me any positive values for y and z velocity, ... the robot cannot actually 
+        attain instantaneous y and z velocity, so the zero measurment that I'm getting
+        is actually valid." This might be less true on uneven ground. (13:00 in the video)-->
+            <!-- [
+            true, true, true,  |  x,y,z
+            true, true, true,  |  roll, pitch, yaw
+            true, true, true,  |  vx, vy, vz
+            true, true, true,  |  vroll, vpitch, vyaw
+            true, true, true,  |  ax, ay, az
+            ] -->
+
+        <rosparam param="initial_state">[
+            0.0,  0.0,  0.0,
+            0.0,  0.0,  0.0,
+            0.0,  0.0,  0.0,
+            0.0,  0.0,  0.0,
+            0.0,  0.0,  0.0
+        ]</rosparam>
+
+        <!-- <param name="twist0" value="/controller_odom/twist_actual"/>
+        <param name="twist0_differential" value="false"/>
+        <param name="twist0_relative" value="false"/>
+        <param name="twist0_queue_size" value="10"/>
+        <rosparam param="twist0_config">
+            [
+            false, false, false,
+            false, false, false,
+            true,  true,  true,
+            false, false, true,
+            false, false, false,
+            ]
+        </rosparam> -->
+
+        <param name="odom0" value="/vo"/>
+        <param name="odom0_differential" value="false"/>
+        <param name="odom0_relative" value="false"/>
+        <param name="odom0_queue_size" value="10"/>
+        <rosparam param="odom0_config">[
+            true,  true,  true,
+            true,  true,  true,
+            true,  true,  true,
+            false,  false,  false,
+            false,  false,  false,
+        ]</rosparam>
+
+        <param name="imu0" value="/imu/data"/>
+        <param name="imu0_differential" value="false"/>
+        <param name="imu0_relative" value="true"/>
+        <param name="imu0_remove_gravitational_acceleration" value="true"/>
+        <param name="imu0_queue_size" value="10"/>
+        <rosparam param="imu0_config">
+            [
+            false, false, false,
+            true, true, false,
+            false, false, false,
+            true, true, false,
+            true, true, true,
+            ]
+        </rosparam>
+
+        <param name="debug" value="false"/>
+        <param name="debug_out_file" value="debug_localization.txt"/>
+        <param name="print_diagnostics" value="true"/>
+
+        <!--
+        a = np.diag([
+            0.005 ,  0.005 ,  0.006 ,  0.003 ,  0.003 ,  0.006 ,  0.0025,
+            0.0025,  0.004 ,  0.001 ,  0.001 ,  0.002 ,  0.001 ,  0.001 , 0.0015
+            ])
+        print(',\n'.join([','.join([str(c) for c in r]) for r in a]))
+        -->
+        <rosparam param="process_noise_covariance">
+            [
+                0.005,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,
+                0.0,0.005,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,
+                0.0,0.0,0.006,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,
+                0.0,0.0,0.0,0.003,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,
+                0.0,0.0,0.0,0.0,0.003,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,
+                0.0,0.0,0.0,0.0,0.0,0.006,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,
+                0.0,0.0,0.0,0.0,0.0,0.0,0.0025,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,
+                0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0025,0.0,0.0,0.0,0.0,0.0,0.0,0.0,
+                0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.004,0.0,0.0,0.0,0.0,0.0,0.0,
+                0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.001,0.0,0.0,0.0,0.0,0.0,
+                0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.001,0.0,0.0,0.0,0.0,
+                0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.002,0.0,0.0,0.0,
+                0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.001,0.0,0.0,
+                0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.001,0.0,
+                0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0015
+            ]
+        </rosparam>
+
+        <!-- 
+         = np.eye(15) * 1e-9
+        print(',\n'.join([','.join([str(c) for c in r]) for r in i]))
+        -->
+        <rosparam param="initial_estimate_covariance">
+            [
+                1e-09,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,
+                0.0,1e-09,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,
+                0.0,0.0,1e-09,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,
+                0.0,0.0,0.0,1e-09,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,
+                0.0,0.0,0.0,0.0,1e-09,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,
+                0.0,0.0,0.0,0.0,0.0,1e-09,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,
+                0.0,0.0,0.0,0.0,0.0,0.0,1e-09,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,
+                0.0,0.0,0.0,0.0,0.0,0.0,0.0,1e-09,0.0,0.0,0.0,0.0,0.0,0.0,0.0,
+                0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1e-09,0.0,0.0,0.0,0.0,0.0,0.0,
+                0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1e-09,0.0,0.0,0.0,0.0,0.0,
+                0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1e-09,0.0,0.0,0.0,0.0,
+                0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1e-09,0.0,0.0,0.0,
+                0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1e-09,0.0,0.0,
+                0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1e-09,0.0,
+                0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1e-09
+
+            ]
+        </rosparam>
+
+    </node>
+</launch>

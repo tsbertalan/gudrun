@@ -136,7 +136,7 @@ def ros_publish(rate=None):
     from std_msgs.msg import Float32
     from math import sqrt
 
-    FRAME_NAME = 'imu'
+    FRAME_NAME = 'imu_link'
 
     rospy.init_node('imu')
 
@@ -161,7 +161,8 @@ def ros_publish(rate=None):
 
     # We don't publish orientation in this pseudo-Imu topic, so, per the docs, 
     # we set the first element of the corresponding covariance matrix to -1.
-    msg_imu_data_raw.orientation_covariance[0] = -1  
+    set_cov_diagonal(msg_imu_data_raw.orientation_covariance, -1)
+    # set_cov_diagonal(msg_imu_data_raw.pose_covariance, -1)
 
     # Publish the magnetometer.
     publisher_imu_mag = rospy.Publisher('imu/mag', MagneticField, queue_size=estimated_frequency)
@@ -171,8 +172,12 @@ def ros_publish(rate=None):
     # I got these covariance numbers in a super-scientific way by watching rqt
     # and eyeballing the typical range of quiescent variation.
     set_cov_diagonal(msg_imu_data_raw.linear_acceleration_covariance, 0.15)
-    set_cov_diagonal(msg_imu_data_raw.angular_velocity_covariance, 0.005)
+    set_cov_diagonal(msg_imu_data_raw.angular_velocity_covariance, [0.001, 0.001, 0.01])
     set_cov_diagonal(msg_imu_mag.magnetic_field_covariance, 0.0007)
+
+    # Sensor has bias.
+    ANGULAR_VELOCITY_FUDGE_OFFSETS = -.035, -0.0125, -.0205
+    GRAVITY_FUDGE_FACTOR = 1.023
 
     # Monitoring this topic will convince you that the static field of the motor's permanent magnet is fierce.
     # It might be relatively constant, though.
@@ -207,16 +212,19 @@ def ros_publish(rate=None):
                 # First three data values are linear accelerations.
                 msg = msg_imu_data_raw
                 publish = publisher_imu_data_raw.publish
+                for i in range(3):
+                    data[i] *= GRAVITY_FUDGE_FACTOR
                 msg_imu_data_raw.linear_acceleration.x, msg.linear_acceleration.y, msg.linear_acceleration.z = data[0:3]
+
 
                 # Next three are angular velocities.
                 msg.angular_velocity.x, msg.angular_velocity.y, msg.angular_velocity.z = data[3:6]
 
                 # Apply emperical anti-drift offsets.
                 # These were obtained by letting the car sit still on a desk, and watching rqt.
-                msg.angular_velocity.x -= .035
-                msg.angular_velocity.y -= .0125
-                msg.angular_velocity.z -= .01625
+                msg.angular_velocity.x += ANGULAR_VELOCITY_FUDGE_OFFSETS[0]
+                msg.angular_velocity.y += ANGULAR_VELOCITY_FUDGE_OFFSETS[1]
+                msg.angular_velocity.z += ANGULAR_VELOCITY_FUDGE_OFFSETS[2]
 
                 # Though we probably won't use it in the Madgwick filter,
                 #  we'll also extract and publish the firmware's fused orientation.
