@@ -369,6 +369,11 @@
     <param name="decimation"  type="double" value="4"/>
     <param name="voxel_size"  type="double" value="0.0"/>
     <param name="approx_sync" type="bool"   value="$(arg approx_sync)"/>
+  <node pkg="depthimage_to_laserscan" name="depthimage_to_laserscan" type="depthimage_to_laserscan">
+    <remap from="image" to="/camera/depth_registered/image_raw"/>
+    <remap from="scan" to="/scan"/>
+    <param name="output_frame_id" value="camera_depth_frame" />
+    <param name="range_min" value="0.1" />
   </node>
 
 </launch>
