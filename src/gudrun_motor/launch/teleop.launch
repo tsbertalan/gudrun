@@ -1,4 +1,0 @@
-<launch>
-  <node type="teleop.py" name="teleop" pkg="gudrun_motor" output="screen"/>
-</launch>
-
