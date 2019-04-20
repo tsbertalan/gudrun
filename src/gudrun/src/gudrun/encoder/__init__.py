@@ -97,11 +97,3 @@ class Encoder(object):
 
         if rospy.is_shutdown():
             print('Caught shutdown signal in listen_to_encoder!')
-
-
-if __name__ == '__main__':
-
-    try:
-        Encoder()
-    except rospy.ROSInterruptException:
-        rospy.logerr('Could not start encoder node.')

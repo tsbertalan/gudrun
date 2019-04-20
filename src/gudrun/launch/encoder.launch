@@ -1,4 +1,4 @@
 <launch>
-    <node type="listen_to_encoder.py" name="listen_to_encoder" pkg="gudrun" output="screen"/>
+    <node type="encoder_driver.py" name="encoder_driver" pkg="gudrun" output="screen"/>
 </launch>
 

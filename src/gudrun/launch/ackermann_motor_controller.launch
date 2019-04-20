@@ -1,5 +1,5 @@
 <launch>
-    <node type="listen_to_encoder.py"          name="listen_to_encoder"          pkg="gudrun" output="screen"/>
+    <include file="$(find gudrun)/launch/encoder.launch" />
     <node type="ackermann_motor_controller.py" name="ackermann_motor_controller" pkg="gudrun" output="screen"/>
 </launch>
 
