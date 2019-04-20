@@ -1,7 +1,8 @@
 #!/usr/bin/env python
-from gudrun.encoder import Encoder
+from gudrun.encoder import EncoderNode
+import rospy
 
 try:
-    Encoder()
+    EncoderNode()
 except rospy.ROSInterruptException:
     rospy.logerr('Could not start encoder node.')

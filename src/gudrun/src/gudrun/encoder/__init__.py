@@ -7,25 +7,30 @@ from numpy import polyfit
 
 from std_msgs.msg import Header, Int32, Float32
 
-class Encoder(object):
+from gudrun.usb_device import USBDevice
 
-    def __init__(self,
-        BAUDRATE = 115200,
-        PORT = None,
-        READ_RATE = 20,
-        ):
+
+class Encoder(USBDevice):
+
+    product = 8036
+    vendor = 2341
+
+    def __init__(self, **kw):
+
+
+        super(Encoder, self).__init__(**kw)
+
+class EncoderNode(USBDevice):
+
+
+    def __init__(self, READ_RATE = 20):
         rospy.init_node('listen_to_encoder')
         
-        if PORT is None:
-            PORT = check_output(['rosrun', 'gudrun', 'get_usb_device_by_ID.py', 'encoder_micro']).strip()
-        print('Connecting to %s on port %s.' % (type(self).__name__, PORT))
+        self.device = Encoder()
 
-
-        self.BAUDRATE = BAUDRATE
-        self.PORT = PORT
         self.READ_RATE = READ_RATE
 
-        self.ser = serial.Serial(self.PORT, self.BAUDRATE, timeout=.1)
+        self.ser = self.device.ser
 
         self.position_publisher = rospy.Publisher('motor_encoder/count', Int32, queue_size=1)
         self.speed_publisher = rospy.Publisher('motor_encoder/velocity', Float32, queue_size=1)

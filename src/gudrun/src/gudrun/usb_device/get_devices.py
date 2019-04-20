@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from __future__ import print_function
 from subprocess import check_output
 
@@ -65,18 +64,3 @@ def preferred_device_paths():
 def device_path(device_id):
     return preferred_device_paths().get(device_id, 'device_not_found')
 
-
-def main():
-    from sys import argv
-
-    if len(argv) < 2:
-        full_devices_map = all_device_paths()
-        from pprint import pprint
-        pprint(full_devices_map)
-
-    else:
-        print(device_path(argv[1]))
-
-
-if __name__ == '__main__':
-    main()

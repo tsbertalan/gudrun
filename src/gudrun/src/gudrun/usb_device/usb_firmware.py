@@ -60,6 +60,9 @@ def get_boards_txt(do_backup=True):
 def change_vendor_product(pre_string='leonardo', vid=None, pid=None, do_backup=True):
     print('\nModding boards.txt.')
 
+    if isinstance(vid, int): vid = str(vid)
+    if isinstance(pid, int): pid = str(pid)
+
     boardstxt, original_file = get_boards_txt(do_backup=do_backup)
 
     new_id = dict(vid=vid, pid=pid)
@@ -109,7 +112,7 @@ class modified_boards_txt(object):
 
 
 def upload(port=None, **kw):
-    print('This is upload_with_specified_vid_pid.upload')
+    print('This is upload_with_specified_vid_pid.')
     from glob import glob
 
     
@@ -121,8 +124,6 @@ def upload(port=None, **kw):
         inofile = pdefiles[0]
     else:
         raise Exception('No .ino or .pde files found!')
-
-
 
     print('Found inofile:', inofile)
 
@@ -141,26 +142,3 @@ def upload(port=None, **kw):
         print('upload_result:', res)
 
 
-
-if __name__ == '__main__':
-    print('upload_with_specified_vid_pid')
-    # change_vendor_product(pid='8037')
-
-    # with modified_boards_txt(pid='8037'):
-    #   for k in range(10, 0, -1):
-    #       print(k)
-    #       sleep(1)
-
-
-    import argparse
-    parser = argparse.ArgumentParser(description='Upload ino file with specified product and vendor ID.')
-    parser.add_argument('--product', default='8036')
-    parser.add_argument('--vendor', default='2341')
-    parser.add_argument('--port', default=None)
-    args = parser.parse_args()
-
-    if args.port is None:
-        args.port = cmd('rosrun', 'gudrun', 'get_usb_device_by_ID.py', 'Arduino_LLC_Arduino_Leonardo_8036:2341').strip()
-        print('No port was specified, so getting default as', args.port)
-    upload(pid=args.product, vid=args.vendor, port=args.port)
-    
