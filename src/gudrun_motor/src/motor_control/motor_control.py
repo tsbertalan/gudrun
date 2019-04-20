@@ -4,8 +4,6 @@ import sys, termios, tty, serial, time
 from os import system, getpid
 from subprocess import check_output
 
-from motor_control.motor_control import MotorControl
-
 
 def rospy_log(kind, *a, **k):
     from rospy import logwarn, logerr, loginfo
