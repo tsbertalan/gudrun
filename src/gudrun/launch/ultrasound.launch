@@ -1,0 +1,4 @@
+<launch>
+    <node type="listen_to_ultrasound.py" name="listen_to_ultrasound" pkg="gudrun" output="screen"/>
+</launch>
+

@@ -10,7 +10,7 @@ else:
     search_string = 'Arduino_LLC_Arduino_Leonardo_8037:2341'
 
 print('Searching for device "%s" ...' % search_string)
-cmd = ['rosrun', 'gudrun_sensors', 'get_usb_device_by_ID.py', search_string]
+cmd = ['rosrun', 'gudrun', 'get_usb_device_by_ID.py', search_string]
 print('$ ' + ' '.join(cmd))
 
 port = check_output(cmd).strip()
@@ -21,7 +21,7 @@ else:
     print('    Found device at %s.' % port)
 
 cmd = [
-    'rosrun', 'gudrun_sensors', 'upload_with_specified_vid_pid.py', 
+    'rosrun', 'gudrun', 'upload_with_specified_vid_pid.py', 
     '--product=%d' % 8035, 
     '--vendor=%d'  % 2341,
     '--port=%s' % port,

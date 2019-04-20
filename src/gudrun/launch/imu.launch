@@ -3,7 +3,7 @@
     <node pkg="tf" type="static_transform_publisher" name="imu_mount_pose" args="-.044 0 .156 -1.57079 .1  -0.05  base_link imu_link 100" />
     <!-- <node pkg="tf" type="static_transform_publisher" name="imu_mount_pose" args="0 .044 -.156 1.57079 0.05 -.1   imu_link base_link 100" /> -->
     
-    <node type="imu_driver.py" name="imu_driver" pkg="gudrun_sensors" output="screen"/>
+    <node type="imu_driver.py" name="imu_driver" pkg="gudrun" output="screen"/>
 
     <!-- The sensor-fusion performed by the Adafruit libraries is lacking, 
     so I'll do it instead on the main PC with this package. -->

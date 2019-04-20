@@ -160,7 +160,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.port is None:
-        args.port = cmd('rosrun', 'gudrun_sensors', 'get_usb_device_by_ID.py', 'Arduino_LLC_Arduino_Leonardo_8036:2341').strip()
+        args.port = cmd('rosrun', 'gudrun', 'get_usb_device_by_ID.py', 'Arduino_LLC_Arduino_Leonardo_8036:2341').strip()
         print('No port was specified, so getting default as', args.port)
     upload(pid=args.product, vid=args.vendor, port=args.port)
     

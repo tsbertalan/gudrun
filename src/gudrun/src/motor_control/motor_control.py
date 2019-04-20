@@ -21,7 +21,7 @@ class MotorControl(object):
 
     def __init__(self, PORT=None, BAUDRATE=115200, verbose=False):
 
-        if PORT is None: PORT = check_output(['rosrun', 'gudrun_sensors', 'get_usb_device_by_ID.py', 'motor_control']).strip()
+        if PORT is None: PORT = check_output(['rosrun', 'gudrun', 'get_usb_device_by_ID.py', 'motor_control']).strip()
         self.ser = serial.Serial(PORT, BAUDRATE)
         self.HEADER = 0x7E
         self.verbose = verbose

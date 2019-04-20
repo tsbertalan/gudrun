@@ -23,22 +23,22 @@
 				<param name="recovery_behaviour_enabled" value="false"/> 
 				<param name="clearing_rotation_allowed" value="false"/>
 
-				<rosparam file="$(find gudrun_planning)/param/costmap_common_params.yaml" command="load" ns="global_costmap" />
-				<rosparam file="$(find gudrun_planning)/param/costmap_common_params.yaml" command="load" ns="local_costmap" />
-				<rosparam file="$(find gudrun_planning)/param/local_costmap_params.yaml" command="load" />
-				<rosparam file="$(find gudrun_planning)/param/global_costmap_params.yaml" command="load" />
+				<rosparam file="$(find gudrun)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
+				<rosparam file="$(find gudrun)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
+				<rosparam file="$(find gudrun)/config/local_costmap_params.yaml" command="load" />
+				<rosparam file="$(find gudrun)/config/global_costmap_params.yaml" command="load" />
 		
-				<!-- <rosparam file="$(find gudrun_planning)/param/dwa_local_planner_params.yaml" command="load" /> -->
+				<!-- <rosparam file="$(find gudrun)/config/dwa_local_planner_params.yaml" command="load" /> -->
 
-				<rosparam file="$(find gudrun_planning)/param/move_base_params.yaml" command="load" />
-				<rosparam file="$(find gudrun_planning)/param/move_base_params.yaml" command="load" ns="TrajectoryPlannerROS"/>
+				<rosparam file="$(find gudrun)/config/move_base_params.yaml" command="load" />
+				<rosparam file="$(find gudrun)/config/move_base_params.yaml" command="load" ns="TrajectoryPlannerROS"/>
 
-				<rosparam file="$(find gudrun_planning)/param/base_local_planner_params.yaml" command="load" />
-				<rosparam file="$(find gudrun_planning)/param/base_local_planner_params.yaml" command="load" ns="TrajectoryPlannerROS"/>
+				<rosparam file="$(find gudrun)/config/base_local_planner_params.yaml" command="load" />
+				<rosparam file="$(find gudrun)/config/base_local_planner_params.yaml" command="load" ns="TrajectoryPlannerROS"/>
 
-				<!-- <rosparam file="$(find gudrun_planning)/param/global_planner_params.yaml" command="load" /> -->
+				<!-- <rosparam file="$(find gudrun)/config/global_planner_params.yaml" command="load" /> -->
 
-				<!-- <rosparam file="$(find gudrun_planning)/param/navfn_global_planner_params.yaml" command="load" /> -->
+				<!-- <rosparam file="$(find gudrun)/config/navfn_global_planner_params.yaml" command="load" /> -->
 			</node>
 	 <!-- </group> -->
 
@@ -53,12 +53,12 @@
 				<rosparam file="$(find gunnar)/param/move_base_params.yaml" command="load" ns='TrajectoryPlannerROS'/>
 		 </node> -->
 
-	<node pkg="gudrun_motor" type="cmd_vel_to_ackermann_drive.py" name="cmd_vel_to_ackermann_drive" output="screen">
+	<node pkg="gudrun" type="cmd_vel_to_ackermann_drive.py" name="cmd_vel_to_ackermann_drive" output="screen">
 		<remap from="cmd_vel" to="/twist_mux/cmd_vel"/>
 	</node>
 
-	<include file="$(find gudrun_motor)/launch/ackermann_motor_controller.launch" />
+	<include file="$(find gudrun)/launch/ackermann_motor_controller.launch" />
 
-	<!-- <include file="$(find gudrun_motor)/launch/twist_mux.launch" /> -->
+	<!-- <include file="$(find gudrun)/launch/twist_mux.launch" /> -->
 
 </launch>

@@ -15,7 +15,7 @@ class Ultrasound(object):
         READ_RATE = 10,
         ):
         if PORT is None:
-            PORT = check_output(['rosrun', 'gudrun_sensors', 'get_usb_device_by_ID.py', 'encoder_mega']).strip(),
+            PORT = check_output(['rosrun', 'gudrun', 'get_usb_device_by_ID.py', 'encoder_mega']).strip(),
 
         rospy.init_node('listen_to_ultrasound')
 

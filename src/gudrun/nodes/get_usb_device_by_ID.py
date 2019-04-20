@@ -7,7 +7,7 @@ def all_device_paths():
     devices = [
         l.split('#')
         for l in check_output(
-            'rosrun gudrun_sensors list_usb_devices.sh'.split()
+            'rosrun gudrun list_usb_devices.sh'.split()
         ).split('\n')
         if len(l.strip()) > 0
     ]

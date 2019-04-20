@@ -26,7 +26,7 @@ def get_port_address(verbose=False):
 
     if verbose: print('Searching for device "%s" ...' % search_string)
     
-    cmd = ['rosrun', 'gudrun_sensors', 'get_usb_device_by_ID.py', search_string]
+    cmd = ['rosrun', 'gudrun', 'get_usb_device_by_ID.py', search_string]
     if verbose: print('$ ' + ' '.join(cmd))
     addr = check_output(cmd).strip()
 

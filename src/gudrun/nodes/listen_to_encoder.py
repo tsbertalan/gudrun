@@ -17,7 +17,7 @@ class Encoder(object):
         rospy.init_node('listen_to_encoder')
         
         if PORT is None:
-            PORT = check_output(['rosrun', 'gudrun_sensors', 'get_usb_device_by_ID.py', 'encoder_micro']).strip()
+            PORT = check_output(['rosrun', 'gudrun', 'get_usb_device_by_ID.py', 'encoder_micro']).strip()
         print('Connecting to %s on port %s.' % (type(self).__name__, PORT))
 
 
