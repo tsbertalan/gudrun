@@ -1,3 +1,4 @@
+<!-- Mix motor commands from path planner and teleop, with priority presumably given to teleop. -->
 <launch>
   <node pkg="twist_mux" type="twist_mux" name="twist_mux" output="screen">
     <remap from="cmd_vel_out" to="twist_mux/cmd_vel"/>

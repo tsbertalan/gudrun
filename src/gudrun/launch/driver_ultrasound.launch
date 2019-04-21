@@ -1,4 +1,5 @@
+<!-- Publish data from our single-channel ultrasound sensor(s). 
+Might be useful for some simple obstacle detection safeguards.-->
 <launch>
     <node type="driver_ultrasound" name="driver_ultrasound" pkg="gudrun" output="screen"/>
 </launch>
-

@@ -1,6 +1,10 @@
+<!-- Use an XKF to fuse odometry from multiple sources (mainly, visual and IMU).
+Based on Tom Moore's talk at ROSCon 2015: https://vimeo.com/142624091 -->
 <launch>
+
+    <arg name="include_encoders" value="false"/>
+
     <node name="ekf_localization_node" pkg="robot_localization" type="ekf_localization_node">
-        <!-- Based on Tom Moore's talk at ROSCon 2015: https://vimeo.com/142624091 -->
 
         <param name="frequency" value="50"/>
         <param name="sensor_timeout" value="0.1"/>
@@ -19,7 +23,7 @@
         can only truly report vx, since, as X X says, "even though the robot probably isn't
         going to give me any positive values for y and z velocity, ... the robot cannot actually 
         attain instantaneous y and z velocity, so the zero measurment that I'm getting
-        is actually valid." This might be less true on uneven ground. (13:00 in the video)-->
+        is actually valid." This might be less true on uneven ground. (13:00 in the Moore's talk)-->
             <!-- [
             true, true, true,  |  x,y,z
             true, true, true,  |  roll, pitch, yaw
@@ -36,11 +40,11 @@
             0.0,  0.0,  0.0
         ]</rosparam>
 
-        <!-- <param name="twist0" value="/controller_odom/twist_actual"/>
-        <param name="twist0_differential" value="false"/>
-        <param name="twist0_relative" value="false"/>
-        <param name="twist0_queue_size" value="10"/>
-        <rosparam param="twist0_config">
+        <param if="$(arg include_encoders)" name="twist0" value="/controller_odom/twist_actual"/>
+        <param if="$(arg include_encoders)" name="twist0_differential" value="false"/>
+        <param if="$(arg include_encoders)" name="twist0_relative" value="false"/>
+        <param if="$(arg include_encoders)" name="twist0_queue_size" value="10"/>
+        <rosparam if="$(arg include_encoders)" param="twist0_config">
             [
             false, false, false,
             false, false, false,
@@ -48,7 +52,7 @@
             false, false, true,
             false, false, false,
             ]
-        </rosparam> -->
+        </rosparam>
 
         <param name="odom0" value="/vo"/>
         <param name="odom0_differential" value="false"/>
@@ -132,6 +136,5 @@
 
             ]
         </rosparam>
-
     </node>
 </launch>

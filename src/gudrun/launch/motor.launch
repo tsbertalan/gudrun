@@ -1,3 +1,4 @@
+<!-- Translate Twist movement commands into Ackermann commands the base can follow, and execute them with PID control. -->
 <launch>
     <include file="$(find gudrun)/launch/motor/driver_encoder.launch" />
     
@@ -8,4 +9,3 @@
     <node type="ackermann_motor_controller" name="ackermann_motor_controller" pkg="gudrun" output="screen"/>
     
 </launch>
-

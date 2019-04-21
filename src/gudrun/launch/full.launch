@@ -1,3 +1,4 @@
+<!-- Top-level launch file for starting everything but teleop. -->
 <launch>
     <include file="$(find gudrun)/launch/SLAM.launch"/>
 
@@ -9,6 +10,5 @@
 
     <include file="$(find gudrun)/launch/motor.launch">
         <arg name="cmd_vel_topic" value="/twist_mux/cmd_vel"/>
-    </include>
-    
+    </include>    
 </launch>

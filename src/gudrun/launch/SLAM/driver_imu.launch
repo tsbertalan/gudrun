@@ -1,7 +1,6 @@
+<!-- Gather, process, and publish data from the IMU (accelerometer+gyroscope+magnetometer, though we're not using the last). -->
 <launch>
-	<!-- TODO: Make these transforms make more sense. -->
     <node pkg="tf" type="static_transform_publisher" name="imu_mount_pose" args="-.044 0 .156 -1.57079 .1  -0.05  base_link imu_link 100" />
-    <!-- <node pkg="tf" type="static_transform_publisher" name="imu_mount_pose" args="0 .044 -.156 1.57079 0.05 -.1   imu_link base_link 100" /> -->
     
     <node type="driver_imu" name="driver_imu" pkg="gudrun" output="screen"/>
 
@@ -20,7 +19,7 @@
         <remap from="imu/data_raw" to="/imu/data_raw" />
         <remap from="imu/mag" to="/imu/mag" />
 
-        <!-- For diagnostiic purposes, first of these could be set to true: -->
+        <!-- For diagnostic purposes, first of these could be set to true: -->
         <param name="publish_tf" value="false" /> 
         <param name="reverse_tf" value="true" />
 

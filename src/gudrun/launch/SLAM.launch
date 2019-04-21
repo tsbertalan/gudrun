@@ -1,82 +1,85 @@
+<!-- Use RGBD sensor+IMU to create odometry, and then do SLAM with the RGBD data to make a map and find us in it. -->
 <launch>
  <!-- This launch assumes that you have already 
-       started you preferred RGB-D sensor and your IMU.
-       TF between frame_id and the sensors should already be set too. -->
-       
-  <arg name="frame_id"                default="base_link" />
-  <arg name="rgb_topic"               default="/camera/rgb/image_rect_color" />
-  <arg name="depth_topic"             default="/camera/depth_registered/image_raw" />
-  <arg name="camera_info_topic"       default="/camera/rgb/camera_info" />
-  <arg name="imu_topic"               default="/imu/data" />
-  <arg name="imu_ignore_acc"          default="true" />
-  <arg name="imu_remove_gravitational_acceleration" default="true" />
+			 started you preferred RGB-D sensor and your IMU.
+			 TF between frame_id and the sensors should already be set too. -->
 
-  <!-- Localization-only mode -->
-  <arg name="localization"      default="false"/>
-  <arg     if="$(arg localization)" name="rtabmap_args"  default=""/>
-  <arg unless="$(arg localization)" name="rtabmap_args"  default="--delete_db_on_start"/>  
-  
-  <group ns="rtabmap">
-    <!-- Visual Odometry -->
-    <node pkg="rtabmap_ros" type="rgbd_odometry" name="visual_odometry" output="log" args="$(arg rtabmap_args)">
-      <remap from="rgb/image"       to="$(arg rgb_topic)"/>
-      <remap from="depth/image"     to="$(arg depth_topic)"/>
-      <remap from="rgb/camera_info" to="$(arg camera_info_topic)"/>
-      <remap from="odom"            to="/vo"/>
+	<!-- Kinect V1 RGBD sensor. -->
+	<include file="$(find openni_launch)/launch/openni.launch">
+		<arg name="depth_registration" value="true" />
+		<arg name="device_id" default="A00363803695038A" />
+	</include>
+	<node pkg="tf" type="static_transform_publisher" name="kinect_position" args=".305 0 .192 0 .05 0 base_link camera_link 100" />
+	<node pkg="depthimage_to_laserscan" name="depthimage_to_laserscan" type="depthimage_to_laserscan">
+		<remap from="image" to="/camera/depth_registered/image_raw"/>
+		<remap from="scan" to="/scan"/>
+		<param name="output_frame_id" value="camera_depth_frame" />
+		<param name="range_min" value="0.1" />
+	</node>
 
-      <param name="frame_id"               type="string" value="$(arg frame_id)"/>
-      <param name="publish_tf"             type="bool"   value="false"/>
-      <param name="publish_null_when_lost" type="bool"   value="true"/>
+	<!-- Combine the visual odometry from RTAB-Map with IMU odometry. -->
+	<include file="$(find gudrun)/launch/SLAM/odometry_fusion.launch" />
+	<include file="$(find gudrun)/launch/SLAM/driver_imu.launch"/>
+			 
+	<arg name="frame_id"                default="base_link" />
+	<arg name="rgb_topic"               default="/camera/rgb/image_rect_color" />
+	<arg name="depth_topic"             default="/camera/depth_registered/image_raw" />
+	<arg name="camera_info_topic"       default="/camera/rgb/camera_info" />
+	<arg name="imu_topic"               default="/imu/data" />
+	<arg name="imu_ignore_acc"          default="true" />
+	<arg name="imu_remove_gravitational_acceleration" default="true" />
 
-      <param name="Odom/FillInfoData"      type="string" value="true"/>
-      <param name="Odom/ResetCountdown"    type="string" value="1"/>
-      
-      <!-- 0=SURF 1=SIFT 2=ORB 3=FAST/FREAK 4=FAST/BRIEF 5=GFTT/FREAK 6=GFTT/BRIEF 7=BRISK 8=GFTT/ORB 9=KAZE -->
-      <!-- <param name="Vis/FeatureType"        type="string" value="6"/>  -->
-      <param name="OdomF2M/MaxSize"        type="string" value="1000"/>
-    </node>
+	<!-- Localization-only mode -->
+	<arg name="localization"      default="false"/>
+	<arg     if="$(arg localization)" name="rtabmap_args"  default=""/>
+	<arg unless="$(arg localization)" name="rtabmap_args"  default="--delete_db_on_start"/>  
+	
+	<group ns="rtabmap">
 
-    <!-- SLAM -->
-    <node name="rtabmap" pkg="rtabmap_ros" type="rtabmap" output="log" args="$(arg rtabmap_args)">
-      <param name="frame_id"        type="string" value="$(arg frame_id)"/>
+		<!-- Visual Odometry -->
+		<node pkg="rtabmap_ros" type="rgbd_odometry" name="visual_odometry" output="log" args="$(arg rtabmap_args)">
+			<remap from="rgb/image"       to="$(arg rgb_topic)"/>
+			<remap from="depth/image"     to="$(arg depth_topic)"/>
+			<remap from="rgb/camera_info" to="$(arg camera_info_topic)"/>
+			<remap from="odom"            to="/vo"/>
+
+			<param name="frame_id"               type="string" value="$(arg frame_id)"/>
+			<param name="publish_tf"             type="bool"   value="false"/>
+			<param name="publish_null_when_lost" type="bool"   value="true"/>
+
+			<param name="Odom/FillInfoData"      type="string" value="true"/>
+			<param name="Odom/ResetCountdown"    type="string" value="1"/>
+			
+			<!-- 0=SURF 1=SIFT 2=ORB 3=FAST/FREAK 4=FAST/BRIEF 5=GFTT/FREAK 6=GFTT/BRIEF 7=BRISK 8=GFTT/ORB 9=KAZE -->
+			<!-- <param name="Vis/FeatureType"        type="string" value="6"/>  -->
+			<param name="OdomF2M/MaxSize"        type="string" value="1000"/>
+		</node>
+
+		<!-- SLAM -->
+		<node name="rtabmap" pkg="rtabmap_ros" type="rtabmap" output="log" args="$(arg rtabmap_args)">
+			<param name="frame_id"        type="string" value="$(arg frame_id)"/>
  
-      <remap from="rgb/image"       to="$(arg rgb_topic)"/>
-      <remap from="depth/image"     to="$(arg depth_topic)"/>
-      <remap from="rgb/camera_info" to="$(arg camera_info_topic)"/>
-      <remap from="odom"            to="/odometry/filtered"/>
+			<remap from="rgb/image"       to="$(arg rgb_topic)"/>
+			<remap from="depth/image"     to="$(arg depth_topic)"/>
+			<remap from="rgb/camera_info" to="$(arg camera_info_topic)"/>
+			<remap from="odom"            to="/odometry/filtered"/>
 
-      <param name="publish_tf"             type="bool"   value="true"/>
-      
-      <param name="Kp/DetectorStrategy"    type="string" value="6"/> <!-- use same features as odom -->
+			<param name="publish_tf"             type="bool"   value="true"/>
+			
+			<param name="Kp/DetectorStrategy"    type="string" value="6"/> <!-- use same features as odom -->
 
-      <param name="cloud_voxel_size" value="0.01"/>
-      <param name="cloud_max_depth" value="3"/>
+			<param name="cloud_voxel_size" value="0.01"/>
+			<param name="cloud_max_depth" value="3"/>
 
-      <!-- localization mode -->
-      <param name="Mem/InitWMWithAllNodes" type="string" value="false"/> 
-      <param     if="$(arg localization)" name="Mem/IncrementalMemory" type="string" value="false"/>
-      <param unless="$(arg localization)" name="Mem/IncrementalMemory" type="string" value="true"/>
+			<!-- localization mode -->
+			<param name="Mem/InitWMWithAllNodes" type="string" value="false"/> 
+			<param     if="$(arg localization)" name="Mem/IncrementalMemory" type="string" value="false"/>
+			<param unless="$(arg localization)" name="Mem/IncrementalMemory" type="string" value="true"/>
 
-      <param name="proj_min_cluster_size" value="1000"/>
-      
-    </node>
-  </group>
+			<param name="proj_min_cluster_size" value="1000"/>	
+		</node>
 
-  <node pkg="tf" type="static_transform_publisher" name="kinect_position" args=".305 0 .192 0 .05 0 base_link camera_link 100" />
-  <include file="$(find openni_launch)/launch/openni.launch">
-    <arg name="depth_registration" value="true" />
-    <arg name="device_id" default="A00363803695038A" />
-  </include>
+	</group>
 
-  <include file="$(find gudrun)/launch/odometry_fusion.launch" />
-
-  <include file="$(find gudrun)/launch/driver_imu.launch"/>
-
-  <node pkg="depthimage_to_laserscan" name="depthimage_to_laserscan" type="depthimage_to_laserscan">
-    <remap from="image" to="/camera/depth_registered/image_raw"/>
-    <remap from="scan" to="/scan"/>
-    <param name="output_frame_id" value="camera_depth_frame" />
-    <param name="range_min" value="0.1" />
-  </node>
 
 </launch>
