@@ -68,9 +68,9 @@
     <arg name="device_id" default="A00363803695038A" />
   </include>
 
-  <include file="$(find gudrun)/launch/robot_localization.launch" />
+  <include file="$(find gudrun)/launch/odometry_fusion.launch" />
 
-  <include file="$(find gudrun)/launch/imu.launch"/>
+  <include file="$(find gudrun)/launch/driver_imu.launch"/>
 
   <node pkg="depthimage_to_laserscan" name="depthimage_to_laserscan" type="depthimage_to_laserscan">
     <remap from="image" to="/camera/depth_registered/image_raw"/>

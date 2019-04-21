@@ -7,6 +7,8 @@
 			<param name="visualize_potential" value="true" />
 		</node> -->
 
+		<arg name="cmd_vel_topic" default="/cmd_vel"/>
+
 		<!-- <group ns="planner"> -->
 			<!-- <remap from="openni_points" to="/camera/depth_registered/points"/> -->
 			<!-- <remap from="openni_points" to="/rtabmap/cloud_obstacles"/> -->
@@ -17,7 +19,7 @@
 				
 			<node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
 
-				<remap from="cmd_vel" to="/nav_vel" />
+				<remap from="cmd_vel" to="$(arg cmd_vel_topic)" />
 
 				<param name="recovery_behavior_enabled" value="false"/> 
 				<param name="recovery_behaviour_enabled" value="false"/> 
@@ -53,9 +55,6 @@
 				<rosparam file="$(find gunnar)/param/move_base_params.yaml" command="load" ns='TrajectoryPlannerROS'/>
 		 </node> -->
 		
-	<include file="$(find gudrun)/launch/ackermann_motor_controller.launch">
-		<arg name="cmd_vel_topic" value="/twist_mux/cmd_vel"/>
-	</include>
 
 	<!-- <include file="$(find gudrun)/launch/twist_mux.launch" /> -->
 
