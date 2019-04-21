@@ -30,7 +30,7 @@ class USBDevice(object):
 
         To be called after flashing firmware, when we (should) know what the device VID and PID are.
 
-        Use the get_usb_device_by_ID.py wrapper around the list_usb_devices.sh script to see what the
+        Use the get_usb_device_by_ID wrapper around the list_usb_devices.sh script to see what the
         currently-connected devices are.
         """
         ss_config_path = self._locate_search_string_file(ss_config_path=DEFAULT_SS_CONFIG_PATH_TEMPLATE)

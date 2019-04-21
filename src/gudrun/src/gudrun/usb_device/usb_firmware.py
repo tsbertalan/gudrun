@@ -112,7 +112,6 @@ class modified_boards_txt(object):
 
 
 def upload(port=None, **kw):
-    print('This is upload_with_specified_vid_pid.')
     from glob import glob
 
     
