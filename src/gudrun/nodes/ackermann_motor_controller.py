@@ -11,7 +11,7 @@ import sys
 for p in sys.path:
     print(p)
 
-from motor_control.motor_control import Car, Smoother
+from gudrun.motor import Car, Smoother
 
 class AckermannMotorController(object):
 

@@ -90,19 +90,28 @@ class USBDevice(object):
         if do_write_search_string:
             self._write_search_string(product, vendor)
 
+
+    def _log(self, message, topic='info'):
+        import rospy
+        name = type(self).__name__
+        if topic == 'info':
+            rospy.loginfo('[%s] %s' % (name, message))
+
+
     def _get_port_from_search_string(self, search_string):
         """Search for a device with the given search string."""
         from gudrun.usb_device.get_devices import device_path
 
-        print('Searching for device "%s" ...' % search_string, end=' ')
+        message = 'Searching for "%s" ...' % search_string
 
         port = device_path(search_string)
 
         if port == 'device_not_found':
-            print()
+            self._log(message)
             raise IOError("Device '%s' wasn't found." % search_string)
         else:
-            print('found device at %s.' % port)
+            message += ' found at %s.' % port
+        self._log(message)
 
         return port
 
@@ -115,9 +124,11 @@ class USBDevice(object):
         if connect:
             search_string = self._get_search_string_from_file(allow_default_ss=allow_default_ss)
             self.port = self._get_port_from_search_string(search_string)
-            print('Connecting to port=%s with baud=%s and timeout=%s ...' % (self.port, self.baud, self.timeout), end=' ')
+            self._log(
+                'Connecting to port=%s with baud=%s and timeout=%s ...' % (self.port, self.baud, self.timeout)
+            )
             self.ser = Serial(self.port, self.baud, timeout=self.timeout)
-            print('connected.')
+            self._log('Connected to %s.' % self.port)
 
     def flash(self, **kw):
         """Disconnect serial and flash firmware.

@@ -54,7 +54,7 @@
 		 </node> -->
 		
 	<include file="$(find gudrun)/launch/ackermann_motor_controller.launch">
-		<remap from="cmd_vel" to="/twist_mux/cmd_vel"/>
+		<arg name="cmd_vel_topic" value="/twist_mux/cmd_vel"/>
 	</include>
 
 	<!-- <include file="$(find gudrun)/launch/twist_mux.launch" /> -->

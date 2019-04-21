@@ -4,6 +4,8 @@ import sys, termios, tty, serial, time
 from os import system, getpid
 from subprocess import check_output
 
+from gudrun.usb_device import USBDevice
+
 
 def rospy_log(kind, *a, **k):
     from rospy import logwarn, logerr, loginfo
@@ -17,15 +19,18 @@ def rospy_log(kind, *a, **k):
         raise ValueError('Argument "kind"=%s should be one of "WARN", "ERR", or "INFO".')
 
 
-class MotorControl(object):
+class Motor(USBDevice):
+    # TODO: The level of abstraction for this thing is a little too low, given its new name.
 
-    def __init__(self, PORT=None, BAUDRATE=115200, verbose=False):
+    product = 8037
+    vendor = 2341
 
-        if PORT is None: PORT = check_output(['rosrun', 'gudrun', 'get_usb_device_by_ID.py', 'motor_control']).strip()
-        self.ser = serial.Serial(PORT, BAUDRATE)
+    def __init__(self, verbose=False, **kw):
+
         self.HEADER = 0x7E
         self.verbose = verbose
         self.last_bytes = 90, 90
+        super(Motor, self).__init__(**kw)
 
     @staticmethod
     def checksum(msg):
@@ -72,7 +77,7 @@ class MotorControl(object):
 
 
 def commandline():
-    mc = MotorControl(verbose=1)
+    motor = Motor(verbose=1)
     
     help = lambda : print('Type two numbers both in [0, 180], separated by space. 90 is neutral. Enter ctrl+d (EOF) to exit.')
     help()
@@ -96,7 +101,7 @@ def commandline():
                     print('Out-of-range.')
                     raise ValueError
 
-            mc.send_packet(a, b)
+            motor.send_packet(a, b)
         except (AssertionError, ValueError):
             help()
         except EOFError:
@@ -139,7 +144,7 @@ class Axis(object):
 
     def __init__(self, pin, motor_control_connection, zero_point=90, low_point=0, high_point=180, dummy=False):
         self._pin = pin
-        self._mc = motor_control_connection
+        self.motor = motor_control_connection
         self._ms_points = low_point, zero_point, high_point
         self._dummy = dummy
         self.fraction = 0
@@ -164,7 +169,7 @@ class Axis(object):
         else:
             angle = fraction * (m - l) + m
         if not self._dummy:
-            _set_servo(self._pin, self._mc, angle)
+            _set_servo(self._pin, self.motor, angle)
         else:
             print('(Set servo %d to %s ms)' % (self._pin, ms))
 
@@ -172,11 +177,11 @@ class Axis(object):
 class Car(object):
 
     def __init__(self, steering_pin=0, throttle_pin=1, dummy=DEBUG_DUMMY, MAX_THROTTLE_ABS=1):
-        self._mc = MotorControl()
+        self.motor = Motor()
 
         self.MAX_THROTTLE_ABS = MAX_THROTTLE_ABS
-        self._steering_axis = Axis(steering_pin, self._mc, dummy=dummy)
-        self._throttle_axis = Axis(throttle_pin, self._mc, dummy=dummy)
+        self._steering_axis = Axis(steering_pin, self.motor, dummy=dummy)
+        self._throttle_axis = Axis(throttle_pin, self.motor, dummy=dummy)
         self._reversing = False
         self.stop()
         self.center()

@@ -16,7 +16,7 @@ from gudrun.ros import ROSNode
 class IMU(USBDevice):
     """A class to stream the serial messages from Arduino."""
 
-    product = 8037
+    product = 8035
 
     def __init__(self, num_values=9, verbose=0, **kw):
         SIZE_STRUCT = num_values * 4

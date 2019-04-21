@@ -1,7 +1,7 @@
 from __future__ import print_function
 import time, datetime
 import numpy as np
-from imu_driver import IMU
+from gudrun.imu import IMU
 
 imu = IMU()
 

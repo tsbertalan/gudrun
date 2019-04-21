@@ -50,8 +50,6 @@ def preferred_device_paths():
     friendly_names = dict(
         ultrasound_uno='1a86_USB2.0-Serial',
         encoder_mega='Arduino__www.arduino.cc__0042_7543933363535110C102',
-        encoder_micro='Arduino_LLC_Arduino_Leonardo_8036:2341',
-        motor_control='Arduino_LLC_Arduino_Leonardo_8037:2341', 
         servo_maestro='Pololu_Corporation_Pololu_Micro_Maestro_6-Servo_Controller_00203742',
     )
     for k, v in friendly_names.items():
