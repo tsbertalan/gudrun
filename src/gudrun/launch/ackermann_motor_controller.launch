@@ -1,5 +1,8 @@
 <launch>
     <include file="$(find gudrun)/launch/encoder.launch" />
+    <arg name="cmd_vel_topic" default="/cmd_vel"/>
+    <remap from="cmd_vel" to="$(arg cmd_vel_topic)"/>
+    <node pkg="gudrun" type="cmd_vel_to_ackermann_drive.py" name="cmd_vel_to_ackermann_drive" output="screen" />
     <node type="ackermann_motor_controller.py" name="ackermann_motor_controller" pkg="gudrun" output="screen"/>
 </launch>
 

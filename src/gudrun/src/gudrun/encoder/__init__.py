@@ -20,8 +20,8 @@ class Encoder(USBDevice):
 
         super(Encoder, self).__init__(**kw)
 
-class EncoderNode(USBDevice):
 
+class EncoderNode(USBDevice):
 
     def __init__(self, READ_RATE = 20):
         rospy.init_node('listen_to_encoder')
@@ -102,3 +102,4 @@ class EncoderNode(USBDevice):
 
         if rospy.is_shutdown():
             print('Caught shutdown signal in listen_to_encoder!')
+

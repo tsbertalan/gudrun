@@ -70,8 +70,6 @@
 
   <include file="$(find gudrun)/launch/robot_localization.launch" />
 
-  <!-- <include file="$(find gudrun)/launch/path_planning.launch"/> -->
-
   <include file="$(find gudrun)/launch/imu.launch"/>
 
   <node pkg="depthimage_to_laserscan" name="depthimage_to_laserscan" type="depthimage_to_laserscan">

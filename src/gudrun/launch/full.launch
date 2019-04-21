@@ -1,0 +1,5 @@
+<launch>
+    <include file="$(find gudrun)/launch/rtabmap_gudrun.launch"/>
+    <include file="$(find gudrun)/launch/path_planning.launch"/>
+    <include file="$(find gudrun)/launch/twist_mux.launch"/>
+</launch>

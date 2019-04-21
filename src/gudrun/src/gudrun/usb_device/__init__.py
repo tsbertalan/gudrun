@@ -10,29 +10,6 @@ DEFAULT_PRODUCT = 8035
 DEFAULT_VENDOR = 2341
 
 
-
-# def _get_caller():
-#     stack_up = 1
-#     while True:
-#         # Get the location of the caller.
-#         frame = inspect.stack()[stack_up]
-#         module = inspect.getmodule(frame[0])
-#         filename = module.__file__
-
-#         fr, fpath, lineno, func, line, n = frame
-#         modname = module.__name__
-#         print('    >> %s > %s (l %d)' % (modname, func, lineno))
-#         # Look for a caller that's not in this module (where the base USBDevice class is).
-#         if modname.endswith('usb_device'):
-#             print('  We\'re still in %s; going up a level.' % (modname,))
-#             stack_up += 1
-#         else:
-#             print('  Found module %s.' % modname)
-#             break
-
-#     return frame, filename
-
-
 class USBDevice(object):
 
     # Defaults that should be overridden (at least the product).
@@ -86,7 +63,7 @@ class USBDevice(object):
         else:
             if allow_default_ss:
                 search_string = '%s%s:%d' % (DEFAULT_SEARCH_STRING_BASE, DEFAULT_PRODUCT, DEFAULT_VENDOR)
-                print('    Couldn\'t find search string file; using default.')
+                print('  Couldn\'t find search string file; using default.')
             else:
                 raise IOError('  Couldn\'t find search string file at %s. Has the device been flashed before?' % ss_config_path)
         print('  Decided that search_string is', search_string)
@@ -100,13 +77,6 @@ class USBDevice(object):
 
         caller_location = self._here
         caller_dir = os.path.dirname(caller_location)
-        # if len(caller_dir) == 0:
-        #     from sys import argv
-        #     print(argv)
-        #     if argv[0] == 'python':
-        #         caller_dir = '.'
-        #     else:
-        #         caller_dir = check_output(['which', caller_location])
         firmware_location = os.path.join(caller_dir, *caller_subdirs)
         print('Changing working directory to', firmware_location)
         os.chdir(firmware_location)
@@ -115,7 +85,6 @@ class USBDevice(object):
 
         print('Uploading to %s with product=%d and vendor=%d...' % (port, product, vendor))
 
-        print('(Here is where we could call `upload(pid=%s, vid=%s, port=%s)`)' % (product, vendor, port))
         upload(pid=product, vid=vendor, port=port)
 
         if do_write_search_string:
@@ -146,9 +115,9 @@ class USBDevice(object):
         if connect:
             search_string = self._get_search_string_from_file(allow_default_ss=allow_default_ss)
             self.port = self._get_port_from_search_string(search_string)
-            print('Connecting to port=%s with baud=%s and timeout=%s .. ' % (self.port, self.baud, self.timeout))
+            print('Connecting to port=%s with baud=%s and timeout=%s ...' % (self.port, self.baud, self.timeout), end=' ')
             self.ser = Serial(self.port, self.baud, timeout=self.timeout)
-        print('\nCONSTRUCTED\n')
+            print('connected.')
 
     def flash(self, **kw):
         """Disconnect serial and flash firmware.
