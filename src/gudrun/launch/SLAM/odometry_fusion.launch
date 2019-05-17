@@ -4,7 +4,12 @@ Based on Tom Moore's talk at ROSCon 2015: https://vimeo.com/142624091 -->
 
     <arg name="include_encoders" value="false"/>
 
-    <node name="ekf_localization_node" pkg="robot_localization" type="ekf_localization_node">
+    <!-- Wait to start the fuser. Visual odometry starts substantially after IMU odometry does.
+    If we don't do this, robot_localization will start naively trying to fuse both before they're ready, and this results in the robot's posistion "falling" for several seconds. 
+    -->
+    <arg name="node_start_delay" default="12.0"/>
+
+    <node name="ekf_localization_node" pkg="robot_localization" type="ekf_localization_node" launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' ">
 
         <param name="frequency" value="50"/>
         <param name="sensor_timeout" value="0.1"/>
@@ -31,7 +36,7 @@ Based on Tom Moore's talk at ROSCon 2015: https://vimeo.com/142624091 -->
             true, true, true,  |  vroll, vpitch, vyaw
             true, true, true,  |  ax, ay, az
             ] -->
-
+        <!-- xyz, rpy, vxvyvz, vrvpvy, axayaz -->
         <rosparam param="initial_state">[
             0.0,  0.0,  0.0,
             0.0,  0.0,  0.0,
