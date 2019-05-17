@@ -93,9 +93,17 @@ class AckermannMotorController(object):
         return self._command >= 0
 
     def set_throttle(self, velocity_target):
-        self.pid.setpoint = velocity_target
+        vt = velocity_target
 
-    def set_steering(self, angle):
+        MIN_NONZERO_SPEED = rospy.get_param('~min_nonzero_speed', .1)
+
+        if vt != 0:
+            s = -1 if vt < 0 else 1
+            vt = s * max(abs(vt), MIN_NONZERO_SPEED)
+
+        self.pid.setpoint = vt
+
+    def set_steering_regular(self, angle):
         # Calibration "curve" is a simple multiplier.
         # Since "car" takes positive to be right turn, we flip the sign.
 
@@ -104,7 +112,10 @@ class AckermannMotorController(object):
         if fraction == 0 and abs(self.car.steering) > .01:
             self.command_steering_smoother.clear()
 
-        self.car.steering = self.command_steering_smoother(fraction)
+        self.car.steering = fraction
+
+    def set_steering(self, angle):
+        self.last_sterring_command = angle
 
     def publish_odometry(self):
         v = self._velocity
@@ -178,6 +189,10 @@ class AckermannMotorController(object):
 
         throttle = self.pseudovelocity_to_throttle(control)
         self.car.throttle = throttle
+
+        smoothed_steering_command = self.command_steering_smoother(self.last_sterring_command)
+        self.st_publisher.publish(smoothed_steering_command)
+        self.set_steering_regular(smoothed_steering_command)
 
     @staticmethod
     def pseudovelocity_to_throttle(pseudovelocity):
