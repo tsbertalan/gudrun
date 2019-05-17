@@ -4,8 +4,10 @@
 	<arg name="cmd_vel_topic" default="/cmd_vel"/>
 
 	<remap from="map" to="/rtabmap/grid_map"/>
-			
-	<node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+
+    <arg name="node_start_delay" default="14.0"/>
+
+	<node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen" launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' ">
 		<remap from="cmd_vel" to="$(arg cmd_vel_topic)" />
 
 		<param name="recovery_behavior_enabled" value="false"/> 
