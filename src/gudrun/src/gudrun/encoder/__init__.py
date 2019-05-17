@@ -97,8 +97,13 @@ class EncoderNode(USBDevice):
                 self.messages[0].data = count
 
                 if abs(self.messages[1].data) < 100:
-                    self.position_publisher.publish(self.messages[0])
-                    self.speed_publisher.publish(self.messages[1])
+                        self.position_publisher.publish(self.messages[0])
+                        self.speed_publisher.publish(self.messages[1])
+
+            except IOError as e:
+                rospy.logerr('Caught serial error! %s' % e)
+                del self.device
+                self.device = Encoder()
 
         if rospy.is_shutdown():
             print('Caught shutdown signal in listen_to_encoder!')
