@@ -5,6 +5,7 @@ https://folk.uio.no/jeanra/Microelectronics/TransmitStructArduinoPython.html"""
 from __future__ import print_function
 
 from serial.serialutil import SerialException
+import time
 import struct
 
 import rospy
@@ -102,10 +103,65 @@ class IMU(USBDevice):
                 backoff = min(1.5 * backoff, backoff_max)
 
 
+class Fudger(object):
+
+    def __init__(self, target, mode='subtract', name=None, start_time=0.1, end_time=4.0):
+        """Estimate a fudge factor.
+
+        Assuming quiescence around target between start and end times,
+        take the running mean, and then lock this in as either an additive
+        or multiplicative fudge factor.
+        """
+        self.target = target
+        self.mode = mode
+        self.name = name
+
+        t = time.time()
+        self.start_time = t + start_time
+        self.end_time = t + end_time
+
+        self.unmodified_values_count = 0
+        self.running_total = 0.0
+        self.run = True
+
+    def update(self, unmodified_value):
+        self.unmodified_values_count += 1
+        self.running_total += unmodified_value
+        self.running_mean = self.running_total / self.unmodified_values_count
+        if False and self.name is not None:
+            print('Updated running mean for %s to %s.' % (self.name, self.running_mean))
+
+    def __call__(self, unmodified_value, do_correction=True):
+        if self.run:
+            t = time.time()
+            if t > self.start_time and t < self.end_time:
+                self.update(unmodified_value)
+            elif t >= self.end_time:
+                self.run = False
+
+        if self.mode == 'multiply':
+            correction = self.target / self.running_mean
+            if do_correction:
+                return unmodified_value * correction
+            else:
+                return correction
+        else:
+            assert self.mode == 'subtract'
+            correction = self.target - self.running_mean
+            if do_correction:
+                return unmodified_value + correction
+            else:
+                return correction
+
+
 class IMUNode(ROSNode):
 
     def __init__(self):
         rospy.init_node('imu')
+        v_offsets = []
+        # Sensor has bias.
+        self.angular_fudgers = [Fudger(0, mode='subtract', name='a%s' % x) for x in 'xyz']
+        self.gravity_fudger = Fudger(9.80665, mode='multiply', name='gravity')
         self.spin()
 
     def spin(self, rate=None):
@@ -153,14 +209,14 @@ class IMUNode(ROSNode):
         set_cov_diagonal(msg_imu_data_raw.angular_velocity_covariance, [0.001, 0.001, 0.01])
         set_cov_diagonal(msg_imu_mag.magnetic_field_covariance, 0.0007)
 
-        # Sensor has bias.
-        ANGULAR_VELOCITY_FUDGE_OFFSETS = -.035, -0.0125, -.0205
-        GRAVITY_FUDGE_FACTOR = 1.023
-
         # Monitoring this topic will convince you that the static field of the motor's permanent magnet is fierce.
         # It might be relatively constant, though.
         # TODO: Do hard-iron magnetometer compensation.
         publisher_mag_magnitude = rospy.Publisher('imu/mag_magnitude', Float32, queue_size=estimated_frequency)
+
+
+        # Publish the magnitude of the accerlation, so we can tune our GRAVITY_FUDGE_FACTOR
+        publisher_accel_magnitude = rospy.Publisher('imu/accel_magnitude', Float32, queue_size=estimated_frequency)
 
         # This needs to match what the firmware is sending (look for the `#define DO_FUSION` line).
         # Setting to false for now, since the Madgwick code seems to work better,
@@ -190,19 +246,22 @@ class IMUNode(ROSNode):
                     # First three data values are linear accelerations.
                     msg = msg_imu_data_raw
                     publish = publisher_imu_data_raw.publish
+                    accel_magnitude = sqrt(sum([c**2 for c in data[:3]]))
+                    GRAVITY_FUDGE_FACTOR = self.gravity_fudger(accel_magnitude, do_correction=False)
                     for i in range(3):
                         data[i] *= GRAVITY_FUDGE_FACTOR
+                    accel_fudged = accel_magnitude * GRAVITY_FUDGE_FACTOR
+                    publisher_accel_magnitude.publish(accel_fudged)
                     msg_imu_data_raw.linear_acceleration.x, msg.linear_acceleration.y, msg.linear_acceleration.z = data[0:3]
-
 
                     # Next three are angular velocities.
                     msg.angular_velocity.x, msg.angular_velocity.y, msg.angular_velocity.z = data[3:6]
 
                     # Apply emperical anti-drift offsets.
                     # These were obtained by letting the car sit still on a desk, and watching rqt.
-                    msg.angular_velocity.x += ANGULAR_VELOCITY_FUDGE_OFFSETS[0]
-                    msg.angular_velocity.y += ANGULAR_VELOCITY_FUDGE_OFFSETS[1]
-                    msg.angular_velocity.z += ANGULAR_VELOCITY_FUDGE_OFFSETS[2]
+                    msg.angular_velocity.x = self.angular_fudgers[0](msg.angular_velocity.x)
+                    msg.angular_velocity.y = self.angular_fudgers[1](msg.angular_velocity.y)
+                    msg.angular_velocity.z = self.angular_fudgers[2](msg.angular_velocity.z)
 
                     # Though we probably won't use it in the Madgwick filter,
                     #  we'll also extract and publish the firmware's fused orientation.
