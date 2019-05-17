@@ -1,3 +1,4 @@
 #!/bin/bash
-port=$( rosrun  gudrun_sensors get_usb_device_by_ID.py encoder_micro )
+ss=$( cat ../device_search_string.txt )
+port=$( rosrun  gudrun get_usb_device_by_ID $ss )
 screen $port 115200
