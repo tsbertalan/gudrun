@@ -162,8 +162,9 @@ class Axis(object):
             fraction = -1
         if fraction > 1:
             fraction = 1
-        if fraction != old_fraction:
+        if fraction != old_fraction and not hasattr(self, '_input_fraction_warned'):
            rospy_log('WARN', 'Capped input fraction from %s to %s.' % (old_fraction, fraction))
+           self._input_fraction_warned = True
         self._fraction = fraction
         l, m, h = self._ms_points
         if fraction >= 0:
