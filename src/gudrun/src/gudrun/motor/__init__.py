@@ -120,9 +120,11 @@ class Smoother(object):
         self.d = deque(maxlen=N)
 
     def __call__(self, x):
-        import numpy as np
         self.d.append(x)
-        return np.mean(self.d)
+        m = 0.0
+        for x in self.d:
+            m += x
+        return 0.0 if len(self.d) == 0 else m / len(self.d)
 
     def clear(self):
         self.d.clear()

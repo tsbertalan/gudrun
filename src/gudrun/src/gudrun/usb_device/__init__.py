@@ -6,14 +6,14 @@ import os.path
 
 DEFAULT_SS_CONFIG_PATH_TEMPLATE = '{MODULE_DIR}/device_search_string.txt'
 DEFAULT_SEARCH_STRING_BASE = 'Arduino_LLC_Arduino_Leonardo_'
-DEFAULT_PRODUCT = 8035
+DEFAULT_PRODUCT = 8036
 DEFAULT_VENDOR = 2341
 
 
 class USBDevice(object):
 
     # Defaults that should be overridden (at least the product).
-    product = 8035
+    product = 8036
     vendor = 2341
     baud = 115200
     timeout = 0.1
