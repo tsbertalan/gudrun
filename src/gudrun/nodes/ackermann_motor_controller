@@ -31,18 +31,26 @@ class AckermannMotorController(object):
         self.pv_publisher = rospy.Publisher('speed_control/measured', Float32, queue_size=10)
         self.cv_publisher = rospy.Publisher('speed_control/control', Float32, queue_size=10)
         self.ce_publisher = rospy.Publisher('speed_control/error', Float32, queue_size=10)
+        self.st_publisher = rospy.Publisher('steering_smoothed', Float32, queue_size=10)
         self._velocity = 0
+
+        self.measured_smoother = Smoother(rospy.get_param('~speed_measurment_smoothing_window', 5))
 
         # Set the PID's "sample_time" to smaller than our own likely update speed,
         # so we will compute a new control value every call.
-        self.pid = PID(1, 0.5, 0.25, setpoint=0, sample_time=1e-6, proportional_on_measurement=False)
+        kp = rospy.get_param('~kp')
+        ki = rospy.get_param('~ki')
+        kd = rospy.get_param('~kd')
+        self.pid = PID(kp, ki, kd, setpoint=0, sample_time=1e-6, proportional_on_measurement=False)
+
 
         self.input_velocity_smoother = Smoother(1)
         if self.input_velocity_smoother.maxlen < 8:
-        	# dangerous to  use derivative term with unsmoothed data.
-        	self.pid.Kd = 0
+            # dangerous to  use derivative term with unsmoothed data.
+            self.pid.Kd = 0
 
-        self.command_steering_smoother = Smoother(1)
+        self.command_steering_smoother = Smoother(rospy.get_param('~steering_smoother_queue_length', 10))
+        self.last_sterring_command = 0
         self.ANGLE_SCALING = 1.65849761
 
         self.PID_update_timer = rospy.Rate(PID_update_rate)
@@ -125,14 +133,14 @@ class AckermannMotorController(object):
             return None
 
         if self.input_velocity_smoother.maxlen == 1:
-        	self._velocity = msg.data
-    	else:
-        	self._velocity = self.input_velocity_smoother(msg.data)
+            self._velocity = self.measured_smoother(msg.data)
+        else:
+            self._velocity = self.input_velocity_smoother(msg.data)
         self.publish_odometry()
 
     def loop(self):
         while not rospy.is_shutdown():
-            self.update_pid()
+            self.update_pid_steering()
             try:
                 self.PID_update_timer.sleep()
             except rospy.ROSInterruptException:
@@ -142,7 +150,7 @@ class AckermannMotorController(object):
         if rospy.is_shutdown():
             print('Caught shutdown signal in ackermann_motor_controller!')
 
-    def update_pid(self, MIN_MOTOR=.01):
+    def update_pid_steering(self, MIN_MOTOR=.01):
         command = self._command
         control = self.pid(self._velocity)
 

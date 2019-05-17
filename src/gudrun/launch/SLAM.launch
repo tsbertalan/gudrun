@@ -9,7 +9,7 @@
 		<arg name="depth_registration" value="true" />
 		<arg name="device_id" default="A00363803695038A" />
 	</include>
-	<node pkg="tf" type="static_transform_publisher" name="kinect_position" args=".305 0 .192 0 .05 0 base_link camera_link 100" />
+	<node pkg="tf" type="static_transform_publisher" name="kinect_position" args=".336 0 .237 0 .05 0 base_link camera_link 100" />
 	<node pkg="depthimage_to_laserscan" name="depthimage_to_laserscan" type="depthimage_to_laserscan">
 		<remap from="image" to="/camera/depth_registered/image_raw"/>
 		<remap from="scan" to="/scan"/>
@@ -18,8 +18,8 @@
 	</node>
 
 	<!-- Combine the visual odometry from RTAB-Map with IMU odometry. -->
-	<include file="$(find gudrun)/launch/SLAM/odometry_fusion.launch" />
 	<include file="$(find gudrun)/launch/SLAM/driver_imu.launch"/>
+	<include file="$(find gudrun)/launch/SLAM/odometry_fusion.launch" />
 			 
 	<arg name="frame_id"                default="base_link" />
 	<arg name="rgb_topic"               default="/camera/rgb/image_rect_color" />

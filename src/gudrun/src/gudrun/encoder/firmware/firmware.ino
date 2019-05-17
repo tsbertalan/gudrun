@@ -1,8 +1,8 @@
 volatile long count;
 volatile byte last_symbol, symbol, a, b;
 
-const int PIN_A = 2;
-const int PIN_B = 3;
+const int PIN_A = 3;
+const int PIN_B = 2;
 
 // There are two distinct seminibble sequences;
 // one for forward, one reverse.
