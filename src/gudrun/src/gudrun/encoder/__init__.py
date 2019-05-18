@@ -38,12 +38,9 @@ class EncoderNode(USBDevice):
 
         WHEEL_CIRCUMFRENCE = (
             3.14159 # circumfrence [diameters]
-            # * 2.0   # circumfrence [in]; indoor wheels
-            * 4.125  # circumfrence [in]; outdoor wheels
-            * 2.54  # circumfrence [cm]
-            / 100.  # circumfrence [m]
+            * rospy.get_param('~meters_per_wheel_diameter', 105.) # circumfrence [m]
         )
-        GEAR_RATIO = 90.0 / 12.0 * 1.35 # 90 is spur; 12 is pinion; final factor is emperical (differential maybe? Half encoder?)
+        GEAR_RATIO = 90.0 / 12.0 * 1.4 # 90 is spur; 12 is pinion; final factor is emperical (differential maybe? Half encoder?)
         ENCODER_CPR = 20.0 # [count/rev]
         self.CPS_TO_SPEED = (
             1.0                   # motor [count/s]

@@ -7,10 +7,6 @@ from geometry_msgs.msg import TwistWithCovarianceStamped
 
 from simple_pid import PID
 
-import sys
-for p in sys.path:
-    print(p)
-
 from gudrun.motor import Car, Smoother
 
 class AckermannMotorController(object):
@@ -30,16 +26,15 @@ class AckermannMotorController(object):
         self.sp_publisher = rospy.Publisher('speed_control/setpoint', Float32, queue_size=10)
         self.pv_publisher = rospy.Publisher('speed_control/measured', Float32, queue_size=10)
         self.cv_publisher = rospy.Publisher('speed_control/control', Float32, queue_size=10)
+        self.th_publisher = rospy.Publisher('speed_control/throttle', Float32, queue_size=10)
         self.ce_publisher = rospy.Publisher('speed_control/error', Float32, queue_size=10)
         self.st_publisher = rospy.Publisher('steering_smoothed', Float32, queue_size=10)
         self._velocity = 0
 
         # Set the PID's "sample_time" to smaller than our own likely update speed,
         # so we will compute a new control value every call.
-        kp = rospy.get_param('~kp')
-        ki = rospy.get_param('~ki')
-        kd = rospy.get_param('~kd')
-        self.pid = PID(kp, ki, kd, setpoint=0, sample_time=1e-6, proportional_on_measurement=False)
+        self.update_pid_params()
+        self.pid = PID(self.Kp, self.Ki, self.Kd, setpoint=0, sample_time=None, proportional_on_measurement=False)
 
 
         self.input_velocity_smoother = Smoother(rospy.get_param('~speed_measurment_smoothing_window', 1))
@@ -69,6 +64,23 @@ class AckermannMotorController(object):
 
         self.loop()
 
+    def update_pid_params(self):
+        """Enable simple runtime-reconfigure with `rosparam set`."""
+        changed = {}
+        for which in 'pid':
+            old = getattr(self, 'K%s' % which, None)
+            new = rospy.get_param('~K%s' % which)
+            changed[which] = old != new
+            setattr(self, 'K%s' % which, new)
+            
+        if hasattr(self, 'pid'):
+            for which in 'pid':
+                key = 'K%s' % which
+                if changed[which]:
+                    print(key, 'reconfigured; updating')
+                    setattr(self.pid, key, getattr(self, key))
+                    print(' tunings are now', self.pid.tunings)
+            
     def callback(self, message):
         self._command = message.drive.speed
         steering = message.drive.steering_angle
@@ -148,6 +160,7 @@ class AckermannMotorController(object):
         while not rospy.is_shutdown():
             self.update_pid_steering()
             try:
+                self.update_pid_params()
                 self.PID_update_timer.sleep()
             except rospy.ROSInterruptException:
                 print('Caught interrupt in ackermann_motor_controller!')
@@ -156,7 +169,8 @@ class AckermannMotorController(object):
         if rospy.is_shutdown():
             print('Caught shutdown signal in ackermann_motor_controller!')
 
-    def update_pid_steering(self, MIN_MOTOR=.01):
+    def update_pid_steering(self):
+        MIN_MOTOR = rospy.get_param('~min_abs_pseudovelocity', .01)
         command = self._command
         control = self.pid(self._velocity)
 
@@ -173,16 +187,17 @@ class AckermannMotorController(object):
             control = min(control, -MIN_MOTOR)
 
         cp, ci, cd = self.pid.components
+        throttle = self.pseudovelocity_to_throttle(control)
+
         self.cp_publisher.publish(cp)
         self.ci_publisher.publish(ci)
         self.cd_publisher.publish(cd)
-
-        self.sp_publisher.publish(command)
+        self.sp_publisher.publish(self.pid.setpoint)
         self.pv_publisher.publish(self._velocity)
         self.cv_publisher.publish(control)
+        self.th_publisher.publish(throttle)
         self.ce_publisher.publish(self._velocity - command)
 
-        throttle = self.pseudovelocity_to_throttle(control)
         self.car.throttle = throttle
 
         smoothed_steering_command = self.command_steering_smoother(self.last_sterring_command)
@@ -197,10 +212,10 @@ class AckermannMotorController(object):
         #y - 0 = m * (x - xb)
         #x = y / m + xb
 
-        m_reverse = 5.204 * 1
-        xb_reverse = -.216
-        m_forward = 6.462 * 1
-        xb_forward = .215
+        m_reverse = rospy.get_param('~pseudovelocity_rate_scaling', 1.0)
+        xb_reverse = -rospy.get_param('~min_abs_throttle', 1.0)
+        m_forward = rospy.get_param('~pseudovelocity_rate_scaling', 1.0)
+        xb_forward = rospy.get_param('~min_abs_throttle', 1.0)
         if pseudovelocity == 0:
             return 0
 

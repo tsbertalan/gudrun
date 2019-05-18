@@ -1,4 +1,6 @@
 <!-- Measure number and speed of motor rotations and publish them. -->
 <launch>
-    <node type="driver_encoder" name="driver_encoder" pkg="gudrun" output="screen"/>
+    <node type="driver_encoder" name="driver_encoder" pkg="gudrun" output="screen">
+        <rosparam file="$(find gudrun)/config/encoder.yaml" command="load" />
+    </node>
 </launch>
