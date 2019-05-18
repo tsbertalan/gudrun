@@ -56,7 +56,7 @@ class EncoderNode(USBDevice):
 
         self.loop()
 
-    def loop(self, max_rate=100):
+    def loop(self, max_rate=4000):
 
         t_last = time.time()
         count_last = count = 0
@@ -91,7 +91,7 @@ class EncoderNode(USBDevice):
                     self.last_times.append(time.time())
 
                 t = time.time()
-                if t - t_last > 1. / self.READ_RATE and len(self.last_times) > 0:
+                if t - t_last > 1. / self.READ_RATE and len(self.last_times) > 1:
                     t_last = t
 
                     counts_per_second, unused_intercept = polyfit(self.last_times, self.last_counts, 1)

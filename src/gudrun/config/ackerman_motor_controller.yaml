@@ -1,6 +1,6 @@
 steering_smoother_queue_length: 20
-kp: 3
-ki: 0.5
-kd: 0.05
+kp: 1.5
+ki: 0.125
+kd: .125
 min_nonzero_speed: 0.1
-speed_measurment_smoothing_window: 5
+speed_measurment_smoothing_window: 1

@@ -34,8 +34,6 @@ class AckermannMotorController(object):
         self.st_publisher = rospy.Publisher('steering_smoothed', Float32, queue_size=10)
         self._velocity = 0
 
-        self.measured_smoother = Smoother(rospy.get_param('~speed_measurment_smoothing_window', 5))
-
         # Set the PID's "sample_time" to smaller than our own likely update speed,
         # so we will compute a new control value every call.
         kp = rospy.get_param('~kp')
@@ -44,10 +42,7 @@ class AckermannMotorController(object):
         self.pid = PID(kp, ki, kd, setpoint=0, sample_time=1e-6, proportional_on_measurement=False)
 
 
-        self.input_velocity_smoother = Smoother(1)
-        if self.input_velocity_smoother.maxlen < 8:
-            # dangerous to  use derivative term with unsmoothed data.
-            self.pid.Kd = 0
+        self.input_velocity_smoother = Smoother(rospy.get_param('~speed_measurment_smoothing_window', 1))
 
         self.command_steering_smoother = Smoother(rospy.get_param('~steering_smoother_queue_length', 10))
         self.last_sterring_command = 0
@@ -144,7 +139,7 @@ class AckermannMotorController(object):
             return None
 
         if self.input_velocity_smoother.maxlen == 1:
-            self._velocity = self.measured_smoother(msg.data)
+            self._velocity = msg.data
         else:
             self._velocity = self.input_velocity_smoother(msg.data)
         self.publish_odometry()
