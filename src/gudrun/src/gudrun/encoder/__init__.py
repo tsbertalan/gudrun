@@ -56,47 +56,54 @@ class EncoderNode(USBDevice):
 
         self.loop()
 
-    def loop(self):
+    def loop(self, max_rate=100):
 
         t_last = time.time()
         count_last = count = 0
+        # max_rate limits cpu usage, which could otherwise be quite high
+        # if we're constantly polling the serial port.
+        # If the rate is low enough to to cause problems (which shouldn't be the case,
+        # since the Serial object should buffer for us), I'll revisit this.
+        rate = rospy.Rate(max_rate)
         while not rospy.is_shutdown():
             
-            if self.ser.in_waiting == 0:
-                pass
-            else:
-                l = ''
-                while self.ser.in_waiting > 0:
-                    l = self.ser.readline().strip()
-
-                if len(l.strip()) == 0:
-                    # Likely, we hit the serial timeout because the car isn't moving.
-                    count = count_last
-
+            try:
+                if self.ser.in_waiting == 0:
+                    rate.sleep()
                 else:
-                    count_last = count
-                    items = l.split(',')
-                    if len(items) == 1:
-                        count = int(items[0])
+
+                    l = ''
+                    while self.ser.in_waiting > 0:
+                        l = self.ser.readline().strip()
+
+                    if len(l.strip()) == 0:
+                        # Likely, we hit the serial timeout because the car isn't moving.
+                        count = count_last
+
                     else:
-                        rospy.logerr('Failed to parse serial line: "%s"' % l)
-                self.last_counts.append(count)
-                self.last_times.append(time.time())
+                        count_last = count
+                        items = l.split(',')
+                        if len(items) == 1:
+                            count = int(items[0])
+                        else:
+                            rospy.logerr('Failed to parse serial line: "%s"' % l)
+                    self.last_counts.append(count)
+                    self.last_times.append(time.time())
 
-            t = time.time()
-            if t - t_last > 1. / self.READ_RATE:
-                t_last = t
+                t = time.time()
+                if t - t_last > 1. / self.READ_RATE and len(self.last_times) > 0:
+                    t_last = t
 
-                counts_per_second, unused_intercept = polyfit(self.last_times, self.last_counts, 1)
-                speed = counts_per_second * self.CPS_TO_SPEED
+                    counts_per_second, unused_intercept = polyfit(self.last_times, self.last_counts, 1)
+                    speed = counts_per_second * self.CPS_TO_SPEED
 
-                # Sometimes we read 0 speed in error every other call; not sure why.
-                # Solve this with some basic smoothing.
-                # self.messages[1].data = self.speed_measurement_smoother(speed)
-                self.messages[1].data = speed
-                self.messages[0].data = count
+                    # Sometimes we read 0 speed in error every other call; not sure why.
+                    # Solve this with some basic smoothing.
+                    # self.messages[1].data = self.speed_measurement_smoother(speed)
+                    self.messages[1].data = speed
+                    self.messages[0].data = count
 
-                if abs(self.messages[1].data) < 100:
+                    if abs(self.messages[1].data) < 100:
                         self.position_publisher.publish(self.messages[0])
                         self.speed_publisher.publish(self.messages[1])
 

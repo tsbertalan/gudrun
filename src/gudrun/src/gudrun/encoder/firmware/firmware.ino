@@ -7,9 +7,8 @@ const int PIN_B = 2;
 // There are two distinct seminibble sequences;
 // one for forward, one reverse.
 // Current byte     ->       0b00, 0b01, 0b10, 0b11
-// Previous byte:
-const byte fwd_sources[4] = {0b10, 0b00, 0b11, 0b01};
-const byte rev_sources[4] = {0b01, 0b11, 0b00, 0b10};
+const byte fwd_sources[4] = {0b10, 0b00, 0b11, 0b01}; // <-     Previous byte
+const byte rev_sources[4] = {0b01, 0b11, 0b00, 0b10}; // <-
 
 void isr() {
 	// We enter here whenever a rising or falling edge is seen on either channel.
@@ -42,7 +41,7 @@ void setup() {
 	count = 0;
 }
 void loop() {
-	if ( millis() % 10 == 0) {
+	if ( millis() % 100 == 0) {
 		Serial.println(count);
 	}
 }
