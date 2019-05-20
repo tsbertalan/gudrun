@@ -63,12 +63,14 @@ Based on Tom Moore's talk at ROSCon 2015: https://vimeo.com/142624091 -->
         <param name="odom0_differential" value="false"/>
         <param name="odom0_relative" value="false"/>
         <param name="odom0_queue_size" value="10"/>
+        <param name="odom0_remove_gravitational_acceleration" value="false"/>
+        <!-- xyz, rpy, vxvyvz, vrvpvy, axayaz -->
         <rosparam param="odom0_config">[
             true,  true,  true,
             true,  true,  true,
-            true,  true,  true,
-            false,  false,  false,
-            false,  false,  false,
+            false, false, false,
+            false, false, false,
+            false, false, false,
         ]</rosparam>
 
         <param name="imu0" value="/imu/data"/>
@@ -76,12 +78,13 @@ Based on Tom Moore's talk at ROSCon 2015: https://vimeo.com/142624091 -->
         <param name="imu0_relative" value="true"/>
         <param name="imu0_remove_gravitational_acceleration" value="true"/>
         <param name="imu0_queue_size" value="10"/>
+        <!-- xyz, rpy, vxvyvz, vrvpvy, axayaz -->
         <rosparam param="imu0_config">
             [
             false, false, false,
             true, true, false,
             false, false, false,
-            true, true, false,
+            false, false, true,
             true, true, true,
             ]
         </rosparam>
