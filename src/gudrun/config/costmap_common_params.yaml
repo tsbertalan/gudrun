@@ -9,7 +9,7 @@ footprint: [[ 0.4695,  0.140], [-0.1145,  0.140], [-0.1145, -0.140], [ 0.4695, -
 footprint_padding: 0.01
 #robot_radius: ir_of_robot
 inflation_radius: 0.25
-transform_tolerance: 2
+transform_tolerance: 5
 
 controller_patience: 2.0
 

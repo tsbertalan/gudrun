@@ -1,12 +1,19 @@
-cloud_voxel_size: 0.01
-cloud_max_depth: 3
+cloud_voxel_size: 0.025
+cloud_max_depth: 5
+cloud_min_depth: .25
 
 Kp:
   # Use same features as odom.
   DetectorStrategy: 6
 
-proj_min_cluster_size: 1000
+proj_min_cluster_size: 100
 
-OdomF2M:
-  # TODO: Default OdomF2M/MaxSizes is 2000; try 1000.
-  MaxSize: 2000
+grid_eroded: True
+
+# OdomF2M:
+#   # TODO: Default OdomF2M/MaxSizes is 2000; try 1000.
+#   MaxSize: 2000
+
+Grid:
+  MinGroundHeight: -.5
+  MaxGroundHeight: .25
