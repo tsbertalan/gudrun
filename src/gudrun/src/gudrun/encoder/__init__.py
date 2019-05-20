@@ -34,6 +34,7 @@ class EncoderNode(USBDevice):
 
         self.position_publisher = rospy.Publisher('motor_encoder/count', Int32, queue_size=1)
         self.speed_publisher = rospy.Publisher('motor_encoder/velocity', Float32, queue_size=1)
+        self.reversed = -1. if rospy.get_param('~reversed') else 1.
         self.messages = Int32(), Float32()
 
         WHEEL_CIRCUMFRENCE = (
@@ -84,7 +85,8 @@ class EncoderNode(USBDevice):
                             count = int(items[0])
                         else:
                             rospy.logerr('Failed to parse serial line: "%s"' % l)
-                    self.last_counts.append(count)
+
+                    self.last_counts.append(float(count))
                     self.last_times.append(time.time())
 
                 t = time.time()
@@ -94,11 +96,8 @@ class EncoderNode(USBDevice):
                     counts_per_second, unused_intercept = polyfit(self.last_times, self.last_counts, 1)
                     speed = counts_per_second * self.CPS_TO_SPEED
 
-                    # Sometimes we read 0 speed in error every other call; not sure why.
-                    # Solve this with some basic smoothing.
-                    # self.messages[1].data = self.speed_measurement_smoother(speed)
-                    self.messages[1].data = speed
-                    self.messages[0].data = count
+                    self.messages[1].data = self.reversed * speed
+                    self.messages[0].data = self.reversed * count
 
                     if abs(self.messages[1].data) < 100:
                         self.position_publisher.publish(self.messages[0])

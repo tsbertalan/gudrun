@@ -6,3 +6,5 @@
 
 # Medium diameter hard plastic wheels
 meters_per_wheel_diameter: 0.087
+
+reversed: true

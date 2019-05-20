@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
-import rospy, math
+import rospy, math, time
 from ackermann_msgs.msg import AckermannDriveStamped
 from std_msgs.msg import Float32
 from geometry_msgs.msg import TwistWithCovarianceStamped
@@ -34,13 +34,16 @@ class AckermannMotorController(object):
         # Set the PID's "sample_time" to smaller than our own likely update speed,
         # so we will compute a new control value every call.
         self.update_pid_params()
-        self.pid = PID(self.Kp, self.Ki, self.Kd, setpoint=0, sample_time=None, proportional_on_measurement=False)
+        import warnings
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=DeprecationWarning)
+            self.pid = PID(self.Kp, self.Ki, self.Kd, setpoint=0, sample_time=None, proportional_on_measurement=False)
 
 
         self.input_velocity_smoother = Smoother(rospy.get_param('~speed_measurment_smoothing_window', 1))
 
         self.command_steering_smoother = Smoother(rospy.get_param('~steering_smoother_queue_length', 10))
-        self.last_sterring_command = 0
+        self.last_steering_command = 0
         self.ANGLE_SCALING = 1.65849761
 
         self.PID_update_timer = rospy.Rate(PID_update_rate)
@@ -59,6 +62,9 @@ class AckermannMotorController(object):
 
         self.odometry_publisher = rospy.Publisher('controller_odom/twist_actual', TwistWithCovarianceStamped, queue_size=5)
         self.WHEELBASE = rospy.get_param('~wheelbase', .355)
+
+        self.timeout_threshold = rospy.get_param('~zero_command_timeout', 0.5)
+        self._last_nonzero_command_time = time.time() - self.timeout_threshold * 1.1
 
         self.initialized = True
 
@@ -88,7 +94,7 @@ class AckermannMotorController(object):
             # TODO: Handle this in from the path planning side, if possible, maybe.
             steering *= -1
         self.set_steering(steering)
-        self.set_throttle(message.drive.speed)
+        self.set_velocity_target(message.drive.speed)
 
         # I'm ignoring, for now, all the velocity/acceleration/jerk parts of the message.
         # It should be noted that the Mini Maestro servo controller does have options for
@@ -99,7 +105,7 @@ class AckermannMotorController(object):
     def _forward(self):
         return self._command >= 0
 
-    def set_throttle(self, velocity_target):
+    def set_velocity_target(self, velocity_target):
         vt = velocity_target
 
         MIN_NONZERO_SPEED = rospy.get_param('~min_nonzero_speed', .1)
@@ -122,7 +128,7 @@ class AckermannMotorController(object):
         self.car.steering = fraction
 
     def set_steering(self, angle):
-        self.last_sterring_command = angle
+        self.last_steering_command = angle
 
     def publish_odometry(self):
         v = self._velocity
@@ -143,10 +149,6 @@ class AckermannMotorController(object):
         self.odometry_publisher.publish(msg)
 
     def _son_do_you_know_how_fast_you_were_going(self, msg):
-        # TODO: Fix the encoder so that we can get direction as well as speed.
-        # This approach will work ok, I guess, for incremental changes.
-        # But there will certainly be weirdly buggy edge cases.
-
         if not getattr(self, 'initialized', False):
             return None
 
@@ -174,21 +176,31 @@ class AckermannMotorController(object):
         command = self._command
         control = self.pid(self._velocity)
 
-        if command == 0:
+        
+        t = time.time()
+        dt = t - self._last_nonzero_command_time
+        if command == 0 and dt > self.timeout_threshold:
             control = 0
             # Reset the integral term when stopping.
             self.pid._integral = 0
 
         # Ensure the controller doesn't fall to zero (and brake the motor)
         # just because we're overspeeding.
-        elif command > 0:
-            control = max(control, MIN_MOTOR)
         else:
-            control = min(control, -MIN_MOTOR)
+            if command != 0: self._last_nonzero_command_time = t
+            if command > 0:
+                control = max(control, MIN_MOTOR)
+            else:
+                control = min(control, -MIN_MOTOR)
 
         cp, ci, cd = self.pid.components
         throttle = self.pseudovelocity_to_throttle(control)
+        self.car.throttle = throttle
 
+        smoothed_steering_command = self.command_steering_smoother(self.last_steering_command)
+        self.set_steering_regular(smoothed_steering_command)
+
+        self.st_publisher.publish(smoothed_steering_command)
         self.cp_publisher.publish(cp)
         self.ci_publisher.publish(ci)
         self.cd_publisher.publish(cd)
@@ -198,11 +210,6 @@ class AckermannMotorController(object):
         self.th_publisher.publish(throttle)
         self.ce_publisher.publish(self._velocity - command)
 
-        self.car.throttle = throttle
-
-        smoothed_steering_command = self.command_steering_smoother(self.last_sterring_command)
-        self.st_publisher.publish(smoothed_steering_command)
-        self.set_steering_regular(smoothed_steering_command)
 
     @staticmethod
     def pseudovelocity_to_throttle(pseudovelocity):

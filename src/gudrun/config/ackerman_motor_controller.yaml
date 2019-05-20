@@ -1,11 +1,11 @@
 steering_smoother_queue_length: 20
 Kp: .2
-Ki: .3
-Kd: .05
+Ki: .2
+Kd: .1
 
 # Some slow speeds we just can't do because of oscillating stiction
 # (perhaps a fancier model-based speed controller could overcome this).
-min_nonzero_speed: 0.15
+min_nonzero_speed: 0.2
 
 # How much to smooth speed measurements before passing them on to the controller.
 # Probably not a good idea; it just deprives the controller of
@@ -20,4 +20,6 @@ pseudovelocity_rate_scaling: 1
 
 # This offset is the value that throttle jumps to after the control signal becomes nonzero, but near-zero.
 # However, this is dangerous to make too small, as it overrides the controller at "low" speed, giving a flat throttle.
-min_abs_throttle: .05
+min_abs_throttle: .1
+
+zero_command_timeout: 4.0

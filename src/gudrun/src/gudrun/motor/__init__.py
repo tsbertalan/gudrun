@@ -12,9 +12,9 @@ def rospy_log(kind, *a, **k):
     if kind == 'WARN':
         logwarn(*a, **k)
     elif kind == 'ERR':
-        logwarn(*a, **k)
+        logerr(*a, **k)
     elif kind == 'INFO':
-        logwarn(*a, **k)
+        loginfo(*a, **k)
     else:
         raise ValueError('Argument "kind"=%s should be one of "WARN", "ERR", or "INFO".')
 
