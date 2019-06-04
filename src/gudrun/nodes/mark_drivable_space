@@ -41,7 +41,7 @@ class Marker(object):
         print(sess)
         self.sess = sess
 
-        save_dir = join(expanduser('~'), 'data', 'gudrun', 'model')
+        save_dir = join(expanduser('~'), 'Dropbox', 'Projects', 'Semantic Segmentation', 'model')
         load_model(save_dir, sess=self.sess)
 
         # for d in dir(self.sess.graph):
