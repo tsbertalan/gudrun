@@ -1,0 +1,138 @@
+#!/usr/bin/env python
+from __future__ import print_function
+import rospy, math, time
+from sensor_msgs.msg import PointCloud2, Image
+from geometry_msgs.msg import Point32
+from sensor_msgs import point_cloud2 as pcl2
+
+from cv_bridge import CvBridge, CvBridgeError
+
+from os.path import join, expanduser
+
+import cv2
+import tensorflow as tf
+import numpy as np
+
+
+
+def load_model(save_dir, sess=None):
+
+    if sess is None:
+        sess = tf.get_default_session()
+    
+    # Add ops to save and restore all the variables.
+    saver = tf.train.import_meta_graph(join(save_dir, 'model.ckpt.meta'))
+    
+    # Restore variables from disk.
+    saver.restore(sess, join(save_dir, 'model.ckpt'))
+    print("Model restored.")
+
+
+class Marker(object):
+
+    def __init__(self, sess=None):
+
+        rospy.init_node('mark_drivable_space')
+
+        if sess is None:
+            sess = tf.get_default_session()
+            if sess is None:
+                sess = tf.Session()
+        print(sess)
+        self.sess = sess
+
+        save_dir = join(expanduser('~'), 'data', 'gudrun', 'model')
+        load_model(save_dir, sess=self.sess)
+
+        # for d in dir(self.sess.graph):
+        #     if not d.startswith('_'):
+        #         print(d)
+
+        # for op in self.sess.graph.get_operations():
+        #     no = False
+        #     for bad in [
+        #         'conv', 'resize', 'max_', 'softmax_cross', 'Reshape', 'gradient', 
+        #         'Adam', 'IsVar', 'save', 'beta', 'const', 'init', 'Arg', 
+        #     ]:
+        #         if op.name.startswith(bad):
+        #             no = True
+        #     if not no:
+        #         print(op.name)
+
+        self.input_image = sess.graph.get_tensor_by_name('input_image:0')
+        self.probabilities = sess.graph.get_tensor_by_name('probabilities:0')
+
+        self.input_image_shape = int(self.input_image.shape[1]), int(self.input_image.shape[2])
+
+
+        # cv2.imshow('image',img)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+
+        pointcloud_topic = rospy.get_param('pointcloud_topic', '/camera/depth_registered/points')
+        rospy.Subscriber(pointcloud_topic, PointCloud2, self.receive_pointcloud, queue_size=1)
+
+        self.drivable_cloud_publisher = rospy.Publisher('drivable_points', PointCloud2, queue_size=1)
+        self.image_publisher = rospy.Publisher("drivable_points_prob", Image)
+        self.bridge = CvBridge()
+
+    def receive_pointcloud(self, msg):
+        import struct, ctypes
+
+        if not hasattr(self, 'received_xyz'):
+            self.received_xyz = np.zeros((msg.height, msg.width, 3), dtype='float32')
+            self.received_color = np.zeros((msg.height, msg.width, 3), dtype='uint8')
+
+        # ds = msg.deserialize_numpy(msg.data, np)
+        xyz = self.received_xyz.reshape((-1, 3))
+        color = self.received_color.reshape((-1, 3))
+        for i, g in enumerate(pcl2.read_points(msg, skip_nans=False)):
+            xyz[i, :] = g[:3]
+
+            rgb = g[3] 
+
+            # cast float32 to int so that bitwise operations are possible
+            packed = struct.pack('>f', rgb)
+            unpacked = struct.unpack('>l', packed)[0]
+            # you can get back the float value by the inverse operations
+
+            pack = ctypes.c_uint32(unpacked).value
+            r = (pack & 0x00FF0000)>> 16
+            g = (pack & 0x0000FF00)>> 8
+            b = (pack & 0x0000FF00)
+
+            color[i, :] = b, g, r
+        resized = cv2.resize(self.received_color, self.input_image_shape[::-1], interpolation=cv2.INTER_AREA)
+
+        a, b = self.input_image_shape
+        probabilities = np.squeeze(self.sess.run(self.probabilities, feed_dict={
+            self.input_image: cv2.cvtColor(resized, cv2.COLOR_BGR2RGB).reshape((1, a, b, 3))
+        }))
+        downscaled = cv2.resize(probabilities, (msg.width, msg.height), interpolation=cv2.INTER_AREA)
+
+        # republish
+        header = rospy.Header()
+        header.stamp = msg.header.stamp
+        header.frame_id = msg.header.frame_id
+        cloud_points = []
+        for (x, y, z), drivable_prob in zip(xyz, downscaled[:, :, 0].ravel()):
+            if drivable_prob>.5:
+                cloud_points.append([x,y,z])
+        #create pcl from points
+        return_msg = pcl2.create_cloud_xyz32(header, cloud_points)
+        #publish    
+        self.drivable_cloud_publisher.publish(return_msg)
+
+        try:
+            uint8_image = (downscaled[:, :, 0]*255.).astype('uint8')
+            self.image_publisher.publish(self.bridge.cv2_to_imgmsg(uint8_image, "mono8"))
+        except CvBridgeError as e:
+            print(e)
+
+    def spin(self):
+        rospy.spin()
+
+
+if __name__ == '__main__':
+    marker = Marker()
+    marker.spin()
