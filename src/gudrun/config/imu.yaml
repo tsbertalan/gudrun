@@ -1,0 +1,12 @@
+driver_imu:
+  linear_acceleration_covariance: 0.5
+
+  angular_velocity_covariance_x: 0.01
+  angular_velocity_covariance_y: 0.01
+  angular_velocity_covariance_z: 0.01
+
+  mag_covariance: 0.01
+
+imu_filter_node:
+  orientation_stddev: 0.1
+  gain: 0.1

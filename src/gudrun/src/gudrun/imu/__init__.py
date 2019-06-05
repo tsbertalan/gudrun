@@ -162,6 +162,15 @@ class IMUNode(ROSNode):
         # Sensor has bias.
         self.angular_fudgers = [Fudger(0, mode='subtract', name='a%s' % x) for x in 'xyz']
         self.gravity_fudger = Fudger(9.80665, mode='multiply', name='gravity')
+
+        self.lin_acc_cov = rospy.get_param('~linear_acceleration_covariance')
+        self.ang_vel_cov = [
+            rospy.get_param('~angular_velocity_covariance_x'),
+            rospy.get_param('~angular_velocity_covariance_y'),
+            rospy.get_param('~angular_velocity_covariance_z'),
+        ]
+        self.mag_cov = rospy.get_param('~mag_covariance')
+        
         self.spin()
 
     def spin(self, rate=None):
@@ -205,9 +214,9 @@ class IMUNode(ROSNode):
 
         # I got these covariance numbers in a super-scientific way by watching rqt
         # and eyeballing the typical range of quiescent variation.
-        set_cov_diagonal(msg_imu_data_raw.linear_acceleration_covariance, 0.15)
-        set_cov_diagonal(msg_imu_data_raw.angular_velocity_covariance, [0.001, 0.001, 0.01])
-        set_cov_diagonal(msg_imu_mag.magnetic_field_covariance, 0.0007)
+        set_cov_diagonal(msg_imu_data_raw.linear_acceleration_covariance, self.lin_acc_cov)
+        set_cov_diagonal(msg_imu_data_raw.angular_velocity_covariance, self.ang_vel_cov)
+        set_cov_diagonal(msg_imu_mag.magnetic_field_covariance, self.mag_cov)
 
         # Monitoring this topic will convince you that the static field of the motor's permanent magnet is fierce.
         # It might be relatively constant, though.

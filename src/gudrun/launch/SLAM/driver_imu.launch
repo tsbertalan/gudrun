@@ -2,20 +2,19 @@
 <launch>
     <node pkg="tf" type="static_transform_publisher" name="imu_mount_pose" args=".123 .065 .098  0 3.11 -.125 base_link imu_link 100" />
     
-    <node type="driver_imu" name="driver_imu" pkg="gudrun" output="screen"/>
+    <rosparam file="$(find gudrun)/config/imu.yaml" command="load" />
+    <node type="driver_imu" name="driver_imu" pkg="gudrun" output="screen">
+    </node>
 
 
     <!-- The sensor-fusion performed by the Adafruit libraries is lacking, 
     so I'll do it instead on the main PC with this package. -->
     <node type="imu_filter_node" name="imu_filter_node" pkg="imu_filter_madgwick" output="screen">
-    	<param name="gain" value=".2"/>
     	<param name="stateless" value="false" />
 
     	<!-- There's a lot of magnetic fields near the sensor, so we'll leave this out for now. 
 		However, eventually, we might want to see if this can be calibrated away.-->
     	<param name="use_mag" value="false" />
-
-        <param name="orientation_stddev" value="0.001" />
 
         <remap from="imu/data_raw" to="/imu/data_raw" />
         <remap from="imu/mag" to="/imu/mag" />
