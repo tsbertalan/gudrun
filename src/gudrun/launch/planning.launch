@@ -24,6 +24,8 @@
 
 		<rosparam file="$(find gudrun)/config/base_local_planner_params.yaml" command="load" />
 		<rosparam file="$(find gudrun)/config/base_local_planner_params.yaml" command="load" ns="TrajectoryPlannerROS"/>
+		<rosparam file="$(find gudrun)/config/kinematic_geometry.yaml" command="load" />
+		<rosparam file="$(find gudrun)/config/kinematic_geometry.yaml" command="load" ns="TrajectoryPlannerROS"/>
 	</node>
 	
 </launch>

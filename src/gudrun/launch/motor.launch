@@ -8,6 +8,7 @@
     <node pkg="gudrun" type="cmd_vel_to_ackermann_drive" name="cmd_vel_to_ackermann_drive" output="screen" />
     <node type="ackermann_motor_controller" name="ackermann_motor_controller" pkg="gudrun" output="screen">
         <rosparam file="$(find gudrun)/config/ackerman_motor_controller.yaml" command="load" />
+        <rosparam file="$(find gudrun)/config/kinematic_geometry.yaml" command="load" />
     </node>
     
 </launch>

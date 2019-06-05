@@ -55,7 +55,7 @@ class KeyboardTeleop(Teleop):
 
         BUTTON_DELAY = 0.2
         THROTTLE_INCREMENT = .1
-        STEERING_INCREMENT = .05
+        STEERING_INCREMENT = .0125
 
         def inc(steering=True, direction=+1):
             if steering:

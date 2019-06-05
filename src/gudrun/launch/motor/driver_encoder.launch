@@ -2,5 +2,6 @@
 <launch>
     <node type="driver_encoder" name="driver_encoder" pkg="gudrun" output="screen">
         <rosparam file="$(find gudrun)/config/encoder.yaml" command="load" />
+        <rosparam file="$(find gudrun)/config/kinematic_geometry.yaml" command="load" />
     </node>
 </launch>

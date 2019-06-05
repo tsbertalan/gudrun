@@ -5,7 +5,7 @@ Kd: .1
 
 # Some slow speeds we just can't do because of oscillating stiction
 # (perhaps a fancier model-based speed controller could overcome this).
-min_nonzero_speed: 0.2
+min_nonzero_speed: 0.1
 
 # How much to smooth speed measurements before passing them on to the controller.
 # Probably not a good idea; it just deprives the controller of

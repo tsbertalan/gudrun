@@ -44,7 +44,7 @@ class AckermannMotorController(object):
 
         self.command_steering_smoother = Smoother(rospy.get_param('~steering_smoother_queue_length', 10))
         self.last_steering_command = 0
-        self.ANGLE_SCALING = 1.65849761
+        self.ANGLE_SCALING = rospy.get_param('~angle_scaling')
 
         self.PID_update_timer = rospy.Rate(PID_update_rate)
         self._cps = self._velocity = 0
@@ -61,7 +61,7 @@ class AckermannMotorController(object):
             self.odometry_message.twist.covariance[r + r * len(diagonal)] = v
 
         self.odometry_publisher = rospy.Publisher('controller_odom/twist_actual', TwistWithCovarianceStamped, queue_size=5)
-        self.WHEELBASE = rospy.get_param('~wheelbase', .355)
+        self.WHEELBASE = rospy.get_param('~wheelbase')
 
         self.timeout_threshold = rospy.get_param('~zero_command_timeout', 0.5)
         self._last_nonzero_command_time = time.time() - self.timeout_threshold * 1.1
@@ -121,10 +121,6 @@ class AckermannMotorController(object):
         # Since "car" takes positive to be right turn, we flip the sign.
 
         fraction = -angle * self.ANGLE_SCALING
-
-        if fraction == 0 and abs(self.car.steering) > .01:
-            self.command_steering_smoother.clear()
-
         self.car.steering = fraction
 
     def set_steering(self, angle):
@@ -198,6 +194,9 @@ class AckermannMotorController(object):
         self.car.throttle = throttle
 
         smoothed_steering_command = self.command_steering_smoother(self.last_steering_command)
+        if smoothed_steering_command == 0 and abs(self.car.steering) > .01:
+            self.command_steering_smoother.clear()
+
         self.set_steering_regular(smoothed_steering_command)
 
         self.st_publisher.publish(smoothed_steering_command)

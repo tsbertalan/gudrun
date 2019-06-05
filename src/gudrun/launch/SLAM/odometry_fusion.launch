@@ -2,7 +2,7 @@
 Based on Tom Moore's talk at ROSCon 2015: https://vimeo.com/142624091 -->
 <launch>
 
-    <arg name="include_encoders" value="false"/>
+    <arg name="include_encoders" value="true"/>
 
     <!-- Wait to start the fuser. Visual odometry starts substantially after IMU odometry does.
     If we don't do this, robot_localization will start naively trying to fuse both before they're ready, and this results in the robot's posistion "falling" for several seconds. 

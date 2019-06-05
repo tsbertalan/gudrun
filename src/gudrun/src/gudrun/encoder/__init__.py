@@ -34,12 +34,12 @@ class EncoderNode(USBDevice):
 
         self.position_publisher = rospy.Publisher('motor_encoder/count', Int32, queue_size=1)
         self.speed_publisher = rospy.Publisher('motor_encoder/velocity', Float32, queue_size=1)
-        self.reversed = -1. if rospy.get_param('~reversed') else 1.
+        self.reversed = -1. if rospy.get_param('~reversed', False) else 1.
         self.messages = Int32(), Float32()
 
         WHEEL_CIRCUMFRENCE = (
             3.14159 # circumfrence [diameters]
-            * rospy.get_param('~meters_per_wheel_diameter', 105.) # circumfrence [m]
+            * rospy.get_param('~meters_per_wheel_diameter') # circumfrence [m]
         )
         GEAR_RATIO = 90.0 / 12.0 * 1.4 # 90 is spur; 12 is pinion; final factor is emperical (differential maybe? Half encoder?)
         ENCODER_CPR = 20.0 # [count/rev]
