@@ -1,112 +1,79 @@
 # TrajectoryPlannerROS:
 
-#   # Current limits based on AZ3 standalone configuration.
-#   acc_lim_x:  0.75
-#   acc_lim_y:  0.75
-#   acc_lim_theta: 4.00
-#   max_vel_x:  0.500
-#   min_vel_x:  0.212
-#   max_rotational_vel: 0.550
-#   min_in_place_rotational_vel: 0.15
-#   escape_vel: -0.10
-#   holonomic_robot: false
-
-#   xy_goal_tolerance:  0.50
-#   yaw_goal_tolerance: 0.50
-
-#   sim_time: 1.7
-#   # sim_granularity: 0.025
-#   sim_granularity: 0.05
-#   vx_samples: 3
-#   vtheta_samples: 3
-#   # vtheta_samples: 20
-
-#   goal_distance_bias: 0.8
-#   path_distance_bias: 0.6
-#   occdist_scale: 0.01
-#   heading_lookahead: 0.325
-#   dwa: true
-
 #   oscillation_reset_dist: 0.05
 #   meter_scoring: true
 
 TebLocalPlannerROS:
 
- # odom_topic: odom
- # map_frame: /odom
- odom_topic: /rtabmap/odom
- map_frame: /map
+  # odom_topic: odom
+  # map_frame: /odom
+  odom_topic: /rtabmap/odom
+  map_frame: /map
     
- # Trajectory
-  
- teb_autosize: True
- # dt_ref: 0.3
- # dt_hysteresis: 0.1
- dt_ref: 0.2
- dt_hysteresis: 0.02
- global_plan_overwrite_orientation: True
- max_global_plan_lookahead_dist: 3.0
- feasibility_check_no_poses: 5
- force_init_new_goal_dist: 0.05 # 1
+  # Trajectory
+  teb_autosize: True
 
- allow_init_with_backwards_motion: False
+  # Desired temporal resolution of the trajectory (the trajectory is not fixed to dt_ref since the temporal resolution is part of the optimization, but the trajectory will be resized between iterations if dt_ref +-dt_hysteresis is violated. 
+  # dt_ref: 0.3
+
+  # Hysteresis for automatic resizing depending on the current temporal resolution, usually approx. 10% of dt_ref is recommended 
+  # dt_hysteresis: 0.02
+
+  # Ignore orientation from global plan.
+  global_plan_overwrite_orientation: True
+  max_global_plan_lookahead_dist: 3.0
+
+  # Specify up to which pose on the predicted plan the feasibility should be checked each sampling interval. 
+  feasibility_check_no_poses: 5
+  force_init_new_goal_dist: 0.05 # 1
+
+
+  allow_init_with_backwards_motion: True
     
- # Robot
-         
- max_vel_x: 0.5
- max_vel_x_backwards: 1.5
- max_vel_theta: 0.11
- # acc_lim_x: 0.5
- # acc_lim_theta: 0.5
- acc_lim_x: 2.6
- acc_lim_theta: 0.11
- # Minimum turning diameter measured as 1.65984 with slick plastic wheels.
- min_turning_radius: .9
-
- cmd_angle_instead_rotvel: True
- wheelbase: 0.3
-
- footprint_model: # types: "point", "circular", "two_circles", "line", "polygon"
+  # Robot
+  cmd_angle_instead_rotvel: True
+  footprint_model: # types: "point", "circular", "two_circles", "line", "polygon"
    type: "polygon"
    vertices: [[ 0.4695,  0.140], [-0.1145,  0.140], [-0.1145, -0.140], [ 0.4695, -0.140]]
 
- # GoalTolerance
+  # GoalTolerance
+  xy_goal_tolerance: 0.15
+  yaw_goal_tolerance: 0.5
+  free_goal_vel: False
+
     
- xy_goal_tolerance: 0.2
- yaw_goal_tolerance: 0.75
- free_goal_vel: False
-    
- # Obstacles
-    
- min_obstacle_dist: 0.1
- inflation_dist: 0.2 # Only takes effect if larger than min_obstacle_dist
- legacy_obstacle_association: False
- include_dynamic_obstacles: True
- include_costmap_obstacles: True
- costmap_obstacles_behind_robot_dist: 1.0
- obstacle_poses_affected: 30
- # costmap_converter_plugin: ""
- # costmap_converter_plugin: "costmap_converter::CostmapToPolygonsDBSMCCH"
- costmap_converter_plugin: "costmap_converter::CostmapToPolygonsDBSConcaveHull"
- # costmap_converter_plugin: "costmap_converter::CostmapToPolygonsDBSMCCH"
- 
- costmap_converter_spin_thread: True
- costmap_converter_rate: 5
+  # Obstacles
+  min_obstacle_dist: 0.05
+  inflation_dist: 0.1 # Only takes effect if larger than min_obstacle_dist
+  legacy_obstacle_association: False
+  include_dynamic_obstacles: True
+  include_costmap_obstacles: True
+  costmap_obstacles_behind_robot_dist: 1.0 # 5 maybe better than default of 1?
+
+  # Each obstacle position is attached to the closest pose on the trajectory in order to keep a distance. Additional neighbors can be taken into account as well. Note, this parameter might be removed in future versions, since the the obstacle association strategy has been modified in kinetic+. Refer to the parameter description of legacy_obstacle_association. 
+  obstacle_poses_affected: 30
+
+  costmap_converter_plugin: "costmap_converter::CostmapToPolygonsDBSConcaveHull"
+  # costmap_converter_plugin: ""
+  # costmap_converter_plugin: "costmap_converter::CostmapToPolygonsDBSMCCH"
+
+  costmap_converter_spin_thread: True
+  costmap_converter_rate: 5
 
 
- costmap_converter/CostmapToPolygonsDBSConcaveHull:
-  # Parameter for DB_Scan, maximum distance to neighbors [m]
-  cluster_max_distance: 0.4
-  # Parameter for DB_Scan: minimum number of points that define a cluster
-  cluster_min_pts: 2
-  # Parameter for DB_Scan: maximum number of points that define a cluster (limit cluster size to avoid large L- and U-shapes)
-  cluster_max_pts: 60
-  # Clear keypoints/vertices of the convex polygon that are close to each other [distance in meters] (0: keep all)
-  convex_hull_min_pt_separation: 0.1
-  # Smaller depth: sharper surface, large depth: convex hull
-  concave_hull_depth: .20
+  costmap_converter/CostmapToPolygonsDBSConcaveHull:
+    # Parameter for DB_Scan, maximum distance to neighbors [m]
+    cluster_max_distance: 0.4
+    # Parameter for DB_Scan: minimum number of points that define a cluster
+    cluster_min_pts: 2
+    # Parameter for DB_Scan: maximum number of points that define a cluster (limit cluster size to avoid large L- and U-shapes)
+    cluster_max_pts: 60
+    # Clear keypoints/vertices of the convex polygon that are close to each other [distance in meters] (0: keep all)
+    convex_hull_min_pt_separation: 0.1
+    # Smaller depth: sharper surface, large depth: convex hull
+    concave_hull_depth: .20
 
- costmap_converter/CostmapToLinesDBSRANSAC:
+  costmap_converter/CostmapToLinesDBSRANSAC:
     cluster_max_distance: 0.4
     cluster_min_pts: 2
     ransac_inlier_distance: 0.15
@@ -117,36 +84,58 @@ TebLocalPlannerROS:
     ransac_filter_remaining_outlier_pts: False
     convex_hull_min_pt_separation: 0.1
 
- # Optimization
-    
- #no_inner_iterations: 5
- #no_outer_iterations: 4
- optimization_activate: True
- optimization_verbose: False
- penalty_epsilon: 0.1
- weight_max_vel_x: 2
- weight_max_vel_theta: 1
- weight_acc_lim_x: 1
- weight_acc_lim_theta: 1
- weight_kinematics_nh: 1000
- weight_kinematics_forward_drive: 4
- weight_kinematics_turning_radius: 1
- weight_optimaltime: 1
- # weight_obstacle: 50
- weight_obstacle: 10
+  # Optimization
+  optimization_activate: True
+  optimization_verbose: False
+      
+  # Number of actual solver iterations called in each outerloop iteration. See param no_outer_iterations. 
+  #no_inner_iterations: 5
 
- # Homotopy Class Planner
+  # Each outerloop iteration automatically resizes the trajectory according to the desired temporal resolution dt_ref and invokes the internal optimizer (that performs no_inner_iterations). The total number of solver iterations in each planning cycle is therefore the product of both values. 
+  #no_outer_iterations: 4
 
- enable_homotopy_class_planning: True
- enable_multithreading: True
- simple_exploration: True
- max_number_classes: 4
- roadmap_graph_no_samples: 15
- roadmap_graph_area_width: 5
- h_signature_prescaler: 0.5
- h_signature_threshold: 0.1
- obstacle_keypoint_offset: 0.1
- obstacle_heading_threshold: 0.45
- visualize_hc_graph: True
- selection_cost_hysteresis: 0.125
- switching_blocking_period: 0.25
+  # Add a small safety margin to penalty functions for hard-constraint approximations 
+  penalty_epsilon: 0.1
+
+  # Optimization weight for satisfying the maximum allowed translational and angular velocity and acceleration
+  weight_max_vel_x: 2
+  weight_max_vel_theta: 1
+  weight_acc_lim_x: 1
+  weight_acc_lim_theta: 1
+
+  # Optimization weight for satisfying the non-holonomic kinematics (this parameter must be high since the kinematics equation constitutes an equality constraint, even a value of 1000 does not imply a bad matrix condition due to small 'raw' cost values in comparison to other costs). 
+  #weight_kinematics_nh: 1000
+
+  # Optimization weight for forcing the robot to choose only forward directions (positive transl. velocities). A small weight (e.g. 1.0) still allows driving backwards. 
+  weight_kinematics_forward_drive: 4.0
+
+  # Optimization weight for enforcing a minimum turning radius (only for carlike robots). 
+  #weight_kinematics_turning_radius: 1
+
+  # Optimization weight for minimzing the distance to via-points (resp. reference path). New in version 0.4 
+  # weight_viapoint: 1.0
+
+  #weight_optimaltime: 1
+  #weight_obstacle: 50
+
+  # Homotopy Class Planner
+  # Activate parallel planning in distinctive topologies (requires much more CPU resources, since multiple trajectories are optimized at once) 
+  enable_homotopy_class_planning: True
+  enable_multithreading: True
+  # simple_exploration: True
+
+  # Specify the maximum number of distinctive trajectories taken into account (limits computational effort) 
+  #max_number_classes: 4
+  #roadmap_graph_no_samples: 15
+  #roadmap_graph_area_width: 5
+  h_signature_prescaler: 0.5
+  h_signature_threshold: 0.1
+  obstacle_keypoint_offset: 0.1
+  obstacle_heading_threshold: 0.45
+  visualize_hc_graph: True
+
+  # Specify how much trajectory cost must a new candidate have w.r.t. a previously selected trajectory in order to be selected (selection if new_cost < old_cost*factor). 
+  # selection_cost_hysteresis: 1.0
+
+  # Specify a time duration in seconds that needs to be expired before a switch to a new equivalence class is allowed. 
+  switching_blocking_period: 0.25

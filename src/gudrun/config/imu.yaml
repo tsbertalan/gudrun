@@ -8,5 +8,5 @@ driver_imu:
   mag_covariance: 0.01
 
 imu_filter_node:
-  orientation_stddev: 0.1
+  orientation_stddev: 0.05
   gain: 0.1

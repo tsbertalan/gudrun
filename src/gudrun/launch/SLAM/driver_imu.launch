@@ -1,5 +1,6 @@
 <!-- Gather, process, and publish data from the IMU (accelerometer+gyroscope+magnetometer, though we're not using the last). -->
 <launch>
+    <!-- Tune this static pose until the IMU-only odometry fusion has reasonably low drift. -->
     <node pkg="tf" type="static_transform_publisher" name="imu_mount_pose" args=".123 .065 .098  0 3.11 -.125 base_link imu_link 100" />
     
     <rosparam file="$(find gudrun)/config/imu.yaml" command="load" />
