@@ -1,16 +1,20 @@
 #!/bin/bash
 set -e
-cd ~/gudrun/data/
+mkdir -p ~/data/gudrun/bagfiles/
+cd ~/data/gudrun/bagfiles/
+# http://wiki.ros.org/openni_launch/Tutorials/BagRecordingPlayback
 rosbag record --bz2 --split --duration=5m  \
     \
-    /camera/rgb/image_color /camera/depth_registered/image\
+    /camera/depth_registered/image_raw \
+    /camera/depth_registered/camera_info \
+    /camera/rgb/image_raw \
+    /camera/rgb/camera_info \
     \
     /imu/data_raw /imu/data \
-    /vo /odometry/filtered \
+    /vo \
+    /odometry/filtered \
     \
     /tf /tf_static \
-    \
-    /scan \
     \
     /motor_encoder/count \
     /motor_encoder/velocity \
