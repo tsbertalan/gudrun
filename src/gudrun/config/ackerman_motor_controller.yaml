@@ -1,11 +1,11 @@
-steering_smoother_queue_length: 20
+steering_smoother_queue_length: 10
 Kp: .2
 Ki: .2
 Kd: .1
 
 # Some slow speeds we just can't do because of oscillating stiction
 # (perhaps a fancier model-based speed controller could overcome this).
-min_nonzero_speed: 0.1
+min_nonzero_speed: 0.2
 
 # How much to smooth speed measurements before passing them on to the controller.
 # Probably not a good idea; it just deprives the controller of
@@ -19,7 +19,12 @@ min_abs_pseudovelocity: 0.05
 pseudovelocity_rate_scaling: 1
 
 # This offset is the value that throttle jumps to after the control signal becomes nonzero, but near-zero.
-# However, this is dangerous to make too small, as it overrides the controller at "low" speed, giving a flat throttle.
-min_abs_throttle: .1
+# This overrides the controller at "low" speed, giving a flat throttle.
 
-zero_command_timeout: 4.0
+# Traxxas mode 3:
+#min_abs_throttle: .1
+
+# Traxxas mode 1:
+min_abs_throttle: .08
+
+zero_command_timeout: 2.0

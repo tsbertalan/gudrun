@@ -6,13 +6,31 @@ global_costmap:
   static_map: false
   transform_tolerance: 5.0
 
-  height: 12.
-  width: 12.
-
-  inflation_layer:
-    inflation_radius: 0.1
+  height: 24.
+  width: 24.
 
   plugins:
-     - {name: static_layer,            type: "costmap_2d::StaticLayer"}
-     - {name: obstacle_layer,          type: "costmap_2d::VoxelLayer"}
-     - {name: inflation_layer,         type: "costmap_2d::InflationLayer"}
+   - {name: static_layer,            type: "costmap_2d::StaticLayer"}
+   - {name: obstacle_layer,          type: "costmap_2d::ObstacleLayer"}
+   - {name: inflation_layer,         type: "costmap_2d::InflationLayer"}
+
+  inflation_layer:
+    inflation_radius: 0.025
+
+  obstacle_layer:
+    observation_sources: laser_scan_sensor
+
+    laser_scan_sensor: 
+      sensor_frame: d400_depth_frame
+      data_type: LaserScan
+      topic: /scan
+      marking: true
+      clearing: true
+      # Since the virtual laser sensor is a little tilted, we need a significant min_obstacle_height
+      # to include both below-plane and above-plane (default) detections.
+      min_obstacle_height: -1.0
+      max_obstacle_height: 3.0
+      #inf_is_valid: true
+
+
+

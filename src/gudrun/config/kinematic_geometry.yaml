@@ -13,17 +13,16 @@ meters_per_wheel_diameter: 0.0525
 #meters_per_wheel_diameter: 0.087
 
 # How much we should re-emphasize steering considering that the servo is lame.
-angle_scaling: 2.0
+angle_scaling: 1.5
 
 
-
-
-max_vel_x: 0.5
+max_vel_x: 0.75
 max_vel_x_backwards: 1.5
-max_vel_theta: 0.11
-# acc_lim_x: 0.5
-# acc_lim_theta: 0.5
-acc_lim_x: 2.6
-acc_lim_theta: 0.11
+acc_lim_x: 0.5
+
+# max_vel_theta: 0.3
+acc_lim_theta: 0.25
+
 # Minimum turning diameter measured as 1.65984 with slick plastic wheels.
-min_turning_radius: .9
+# Yeah, basically confirmed also with stock rubber wheels.
+min_turning_radius: .82

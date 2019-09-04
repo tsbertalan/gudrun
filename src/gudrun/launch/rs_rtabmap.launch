@@ -1,0 +1,58 @@
+<launch>
+    <!-- 
+          NOTICE: Installation of rtabmap is required for using this launch file:
+                  For installation type:
+                        apt-get install ros-kinetic-rtabmap-ros
+    -->
+    <arg name="serial_no_camera1"    			default="905312112060"/>
+    <!--<arg name="serial_no_camera1"    			default=""/>-->
+    <arg name="serial_no_camera2"    			default="828112071487"/>
+    <arg name="camera1"              			default="t265"/>
+    <arg name="camera2"              			default="d400"/>
+    <arg name="clip_distance"             default="3"/>
+    <arg name="use_rviz"                  default="false"/>
+    <arg name="use_rtabmapviz"            default="false"/>
+
+    
+    <!-- <node pkg="tf" type="static_transform_publisher" name="t265_position" args="-.336 0 -.237 -.075 .135 -0.025 t265_link base_link 100" /> -->
+    <node pkg="tf" type="static_transform_publisher" name="t265_position" args="-.336 0 -.237 -.075 .135 -.025 t265_link base_link 100" />
+    
+    <node pkg="depthimage_to_laserscan" name="depthimage_to_laserscan" type="depthimage_to_laserscan">
+        <remap from="image" to="/d400/depth/image_rect_raw"/>
+        <remap from="scan" to="/scan"/>
+        <param name="output_frame_id" value="d400_depth_frame" />
+        <param name="range_min" value="0.1" />
+        <param name="scan_height" value="10" />
+    </node>
+
+
+    <include file="$(find gudrun)/launch/rs_d400_and_t265.launch">
+    
+        <arg name="serial_no_camera1"               value="$(arg serial_no_camera1)"/>
+        <arg name="serial_no_camera2"               value="$(arg serial_no_camera2)"/>
+        <arg name="camera1"                         value="$(arg camera1)"/>
+        <arg name="camera2"                         value="$(arg camera2)"/>
+        <arg name="clip_distance"                   value="$(arg clip_distance)"/>
+
+    </include>
+
+    <include file="$(find rtabmap_ros)/launch/rtabmap.launch">
+
+            <rosparam file="$(find gudrun)/config/SLAM.yaml" command="load" />
+
+            <!-- <arg name="proj_max_height" value="0.5" />
+
+            <arg name="grid_eroded" value="True" /> -->
+
+            <arg name="rtabmap_args"       value="--delete_db_on_start"/>
+            <arg name="depth_topic"        value="/$(arg camera2)/aligned_depth_to_color/image_raw"/>
+            <arg name="frame_id"           value="$(arg camera2)_link"/>
+            <arg name="visual_odometry"    value="false"/>
+            <arg name="odom_topic"         value="/$(arg camera1)/odom/sample"/>
+            <arg name="rgb_topic"          value="/$(arg camera2)/color/image_raw"/>
+            <arg name="camera_info_topic"  value="/$(arg camera2)/color/camera_info"/>
+            <arg name="queue_size"         value="200"/>
+            <arg name="rviz"               value="$(arg use_rviz)"/>
+            <arg name="rtabmapviz"         value="$(arg use_rtabmapviz)"/>
+    </include>
+</launch>

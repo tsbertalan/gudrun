@@ -1,34 +1,33 @@
 local_costmap:
   global_frame: map
   robot_base_frame: base_link
-  update_frequency: 2.0
-  publish_frequency: 2.0
+  update_frequency: 10.0
+  publish_frequency: 10.0
   static_map: false
   rolling_window: true
-  width: 12.0
-  height: 12.0
+  # always_send_full_costmap: true
+  width: 4
+  height: 4
   resolution: 0.025
-  origin_x: -2.0
-  origin_y: -2.0
-
+  
+  plugins:
+   - {name: static_layer,            type: "costmap_2d::StaticLayer"}
+   - {name: obstacle_layer,          type: "costmap_2d::ObstacleLayer"}
+  
   obstacle_layer:
     observation_sources: laser_scan_sensor
 
-    laser_scan_sensor: {
-      sensor_frame: camera_depth_frame,
-      data_type: LaserScan,
-      topic: /scan,
-      marking: true,
+    laser_scan_sensor: 
+      sensor_frame: d400_depth_frame
+      data_type: LaserScan
+      topic: /scan
+      marking: true
       clearing: true
-    }
+      # Since the virtual laser sensor is a little tilted, we need a significant min_obstacle_height
+      # to include both below-plane and above-plane (default) detections.
+      min_obstacle_height: -1.0
+      max_obstacle_height: 3.0
+      #inf_is_valid: true
 
-    # assuming receiving a cloud from rtabmap_ros/obstacles_detection node
-    # point_cloud_sensor: {
-    #   sensor_frame: camera_link,
-    #   data_type: PointCloud2, 
-    #   topic: openni_points, 
-    #   expected_update_rate: 1, 
-    #   marking: true, 
-    #   clearing: true,
-    #   min_obstacle_height: -99999.0,
-    #   max_obstacle_height: 99999.0}
+
+

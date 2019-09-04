@@ -1,0 +1,11 @@
+<launch>
+    <include file="$(find gudrun)/launch/planning.launch">
+        <arg name="cmd_vel_topic" value="/nav_vel"/>
+    </include>
+
+    <include file="$(find gudrun)/launch/twist_mux.launch"/>
+
+    <include file="$(find gudrun)/launch/motor.launch">
+        <arg name="cmd_vel_topic" value="/twist_mux/cmd_vel"/>
+    </include>
+</launch>

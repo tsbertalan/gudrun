@@ -76,5 +76,14 @@
 		"sourceLink": "https://github.com/tsbertalan/gudrun/tree/013200dd2a754738b1cc4b32b2739114e999bb7c/src/gudrun_sensors/imu",
 		"sourceLinkText": "Relevant files"
 	}
+	,
+	{
+		"content": "doc/entries/realsense_mapping.md",
+		"title": "Using Intel RealSense for mapping",
+		"subtitle": "27 August 2019",
+		"files": [
+			"doc/entries/some_segmentation_excerpt2.mp4"
+		]
+	}
 ]
 }

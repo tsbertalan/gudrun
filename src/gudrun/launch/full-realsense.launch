@@ -1,0 +1,7 @@
+<!-- Top-level launch file for starting everything but teleop. -->
+<launch>
+    <include file="$(find gudrun)/launch/rs_rtabmap.launch"/>
+
+    <include file="$(find gudrun)/launch/plan_mux.launch" />
+
+</launch>
