@@ -105,7 +105,7 @@ class IMU(USBDevice):
 
 class Fudger(object):
 
-    def __init__(self, target, mode='subtract', name=None, start_time=0.1, end_time=4.0):
+    def __init__(self, target, mode='subtract', name=None, start_time=0.1, end_time=8.0):
         """Estimate a fudge factor.
 
         Assuming quiescence around target between start and end times,
@@ -132,6 +132,17 @@ class Fudger(object):
             print('Updated running mean for %s to %s.' % (self.name, self.running_mean))
 
     def __call__(self, unmodified_value, do_correction=True):
+
+        if self.target is None:
+            self.run = False
+            if do_correction:
+                return unmodified_value
+            else:
+                if self.mode == 'multiply':
+                    return 1.0
+                else:
+                    return 0.0
+
         if self.run:
             t = time.time()
             if t > self.start_time and t < self.end_time:
@@ -161,7 +172,18 @@ class IMUNode(ROSNode):
         v_offsets = []
         # Sensor has bias.
         self.angular_fudgers = [Fudger(0, mode='subtract', name='a%s' % x) for x in 'xyz']
-        self.gravity_fudger = Fudger(9.80665, mode='multiply', name='gravity')
+        g = 9.80665 #  [m/s/s]
+        # self.accel_axis_scaling_factors = [
+        #     1.,
+        #     1.,
+        #     1.,
+        # ]
+        self.accel_axis_scaling_factors = [
+            g/10.1,
+            g/9.98,
+            g/11.0,
+        ]
+        self.gravity_fudger = Fudger(g, mode='multiply', name='gravity')
 
         self.lin_acc_cov = rospy.get_param('~linear_acceleration_covariance')
         self.ang_vel_cov = [
@@ -169,6 +191,7 @@ class IMUNode(ROSNode):
             rospy.get_param('~angular_velocity_covariance_y'),
             rospy.get_param('~angular_velocity_covariance_z'),
         ]
+
         self.mag_cov = rospy.get_param('~mag_covariance')
         
         self.spin()
@@ -255,6 +278,10 @@ class IMUNode(ROSNode):
                     # First three data values are linear accelerations.
                     msg = msg_imu_data_raw
                     publish = publisher_imu_data_raw.publish
+
+                    for i in range(3):
+                        data[i] *= self.accel_axis_scaling_factors[i]
+
                     accel_magnitude = sqrt(sum([c**2 for c in data[:3]]))
                     GRAVITY_FUDGE_FACTOR = self.gravity_fudger(accel_magnitude, do_correction=False)
                     for i in range(3):
