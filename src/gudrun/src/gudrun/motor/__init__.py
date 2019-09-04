@@ -41,6 +41,7 @@ class Motor(USBDevice):
         return t & 0xff
 
     def send_packet(self, byte_a=None, byte_b=None):
+        rospy_log = lambda *a, **kw: None
         if byte_a is None:
             byte_a = self.last_bytes[0]
         if byte_b is None:
@@ -48,7 +49,7 @@ class Motor(USBDevice):
         self.last_bytes = byte_a, byte_b
 
         c = self.checksum([self.HEADER, byte_a, byte_b])
-        if self.verbose: print('Sending steering=%s, throttle=%s -> checksum=%s' % (byte_a, byte_b, c))
+        if self.verbose: rospy_log('INFO', 'Sending steering=%s, throttle=%s -> checksum=%s' % (byte_a, byte_b, c))
         try:
             self.ser.write(chr(self.HEADER))
             self.ser.write(chr(byte_a))
@@ -67,6 +68,7 @@ class Motor(USBDevice):
                 response.append(data.strip())   
             except serial.serialutil.SerialException as e:
                 rospy_log('ERR', str(e))
+
         if self.verbose:
             if len(response) > 0:
                 print('Response (%d line%s):' % (len(response), '' if len(response) == 1 else 's'))
@@ -74,6 +76,7 @@ class Motor(USBDevice):
 
         if 'csbad' in response:
             rospy_log('ERR', 'Motor control firmware reported bad checksum.')
+
 
 
 def commandline():
@@ -157,6 +160,9 @@ class Axis(object):
     
     @fraction.setter
     def fraction(self, fraction):
+        rospy_log = lambda *a, **kw: None
+
+        rospy_log('INFO', 'Axis %s got fraction %s.' % (self, fraction))
         old_fraction = fraction
         if fraction < -1:
             fraction = -1
@@ -171,6 +177,9 @@ class Axis(object):
             angle = fraction * (h - m) + m
         else:
             angle = fraction * (m - l) + m
+        rospy_log('INFO', 'Will set pin %s using motor class %s to angle %s.' % (
+            self._pin, self.motor, angle
+        ))
         if not self._dummy:
             _set_servo(self._pin, self.motor, angle)
         else:
@@ -205,7 +214,9 @@ class Car(object):
 
     @throttle.setter
     def throttle(self, fraction):
+        rospy_log = lambda *a, **kw: None
 
+        rospy_log('INFO', '%s got throttle fraction %s.' % (self, fraction))
         if not getattr(self, 'initialized', False):
             return
 
@@ -231,6 +242,9 @@ class Car(object):
 
     @steering.setter
     def steering(self, fraction):
+        rospy_log = lambda *a, **kw: None
+
+        rospy_log('INFO', '%s got steering fraction of %s.' % (self, fraction))
 
         if not getattr(self, 'initialized', False):
             return
