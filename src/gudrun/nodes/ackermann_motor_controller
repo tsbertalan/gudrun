@@ -5,6 +5,8 @@ from ackermann_msgs.msg import AckermannDriveStamped
 from std_msgs.msg import Float32
 from geometry_msgs.msg import TwistWithCovarianceStamped
 
+import numpy as np
+
 from simple_pid import PID
 
 from gudrun.motor import Car, Smoother
@@ -114,6 +116,10 @@ class AckermannMotorController(object):
             s = -1 if vt < 0 else 1
             vt = s * max(abs(vt), MIN_NONZERO_SPEED)
 
+        if np.sign(vt) != np.sign(self.pid.setpoint):
+            new_integral_term = 0
+            rospy.loginfo('Direction command switched; changing integral term from %s to %s.' % (self.pid._integral, new_integral_term))
+            self.pid._integral = new_integral_term
         self.pid.setpoint = vt
 
     def set_steering_regular(self, angle):
@@ -208,7 +214,6 @@ class AckermannMotorController(object):
         self.cv_publisher.publish(control)
         self.th_publisher.publish(throttle)
         self.ce_publisher.publish(self._velocity - command)
-
 
     @staticmethod
     def pseudovelocity_to_throttle(pseudovelocity):
