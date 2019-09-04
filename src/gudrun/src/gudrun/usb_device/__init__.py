@@ -6,15 +6,15 @@ import os.path
 
 DEFAULT_SS_CONFIG_PATH_TEMPLATE = '{MODULE_DIR}/device_search_string.txt'
 DEFAULT_SEARCH_STRING_BASE = 'Arduino_LLC_Arduino_Leonardo_'
-DEFAULT_PRODUCT = 8036
+DEFAULT_PRODUCT = 8037
 DEFAULT_VENDOR = 2341
 
 
 class USBDevice(object):
 
     # Defaults that should be overridden (at least the product).
-    product = 8036
-    vendor = 2341
+    product = DEFAULT_PRODUCT
+    vendor = DEFAULT_VENDOR
     baud = 115200
     timeout = 0.1
 
@@ -121,14 +121,23 @@ class USBDevice(object):
             from warnings import warn
             warn('Product and vendor should be changed from their defaults of %s and %s.' % (self.product, self.vendor))
 
+        self.allow_default_ss = allow_default_ss
         if connect:
-            search_string = self._get_search_string_from_file(allow_default_ss=allow_default_ss)
-            self.port = self._get_port_from_search_string(search_string)
-            self._log(
-                'Connecting to port=%s with baud=%s and timeout=%s ...' % (self.port, self.baud, self.timeout)
-            )
-            self.ser = Serial(self.port, self.baud, timeout=self.timeout)
-            self._log('Connected to %s.' % self.port)
+            self.connect()
+
+    def connect(self):
+        search_string = self._get_search_string_from_file(allow_default_ss=self.allow_default_ss)
+        self.port = self._get_port_from_search_string(search_string)
+        self._log(
+            'Connecting to port=%s with baud=%s and timeout=%s ...' % (self.port, self.baud, self.timeout)
+        )
+        self.ser = Serial(self.port, self.baud, timeout=self.timeout)
+        self._log('Connected to %s.' % self.port)
+
+    def reconnect(self):
+        if hasattr(self, 'ser'):
+            del self.ser
+        self.connect()
 
     def flash(self, **kw):
         """Disconnect serial and flash firmware.
