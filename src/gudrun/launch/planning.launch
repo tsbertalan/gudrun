@@ -5,7 +5,7 @@
 
 	<remap from="map" to="/rtabmap/grid_map"/>
 
-    <arg name="node_start_delay" default="14.0"/>
+    <arg name="node_start_delay" default="8.0"/>
 
 	<node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen" launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' ">
 		<remap from="cmd_vel" to="$(arg cmd_vel_topic)" />
@@ -26,6 +26,7 @@
 		<rosparam file="$(find gudrun)/config/base_local_planner_params.yaml" command="load" ns="TrajectoryPlannerROS"/>
 		<rosparam file="$(find gudrun)/config/kinematic_geometry.yaml" command="load" />
 		<rosparam file="$(find gudrun)/config/kinematic_geometry.yaml" command="load" ns="TrajectoryPlannerROS"/>
+		<rosparam file="$(find gudrun)/config/kinematic_geometry.yaml" command="load" ns="TebLocalPlannerROS"/>
 	</node>
 	
 </launch>
