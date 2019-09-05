@@ -2,13 +2,10 @@
 <launch>
     <include file="$(find gudrun)/launch/SLAM.launch"/>
 
-    <include file="$(find gudrun)/launch/planning.launch">
-        <arg name="cmd_vel_topic" value="/nav_vel"/>
-    </include>
+    <include file="$(find gudrun)/launch/planning_and_motors.launch" />
 
-    <include file="$(find gudrun)/launch/twist_mux.launch"/>
+    <node pkg="topic_tools" name="camera_throttle" type="throttle" args="messages /d400/color/image_raw 1 /d400_camera_throttled" />
 
-    <include file="$(find gudrun)/launch/motor.launch">
-        <arg name="cmd_vel_topic" value="/twist_mux/cmd_vel"/>
-    </include>    
+    <node pkg="topic_tools" name="depth_throttle" type="throttle" args="messages /d400/depth/image_rect_raw 1 /d400_depth_throttled" />
+
 </launch>

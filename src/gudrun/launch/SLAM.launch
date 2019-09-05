@@ -1,82 +1,52 @@
-<!-- Use RGBD sensor+IMU to create odometry, and then do SLAM with the RGBD data to make a map and find us in it. -->
 <launch>
- <!-- This launch assumes that you have already 
-			 started you preferred RGB-D sensor and your IMU.
-			 TF between frame_id and the sensors should already be set too. -->
+    <!-- 
+          NOTICE: Installation of rtabmap is required for using this launch file:
+                  For installation type:
+                        apt-get install ros-kinetic-rtabmap-ros
+    -->
+    <arg name="serial_no_camera1"    			default="905312112060"/>
+    <arg name="serial_no_camera2"    			default="828112071487"/>
+    <arg name="camera1"              			default="t265"/>
+    <arg name="camera2"              			default="d400"/>
+    <arg name="clip_distance"             default="3"/>
+    <arg name="use_rviz"                  default="false"/>
+    <arg name="use_rtabmapviz"            default="false"/>
 
-	<!-- Kinect V1 RGBD sensor. -->
-	<include file="$(find openni_launch)/launch/openni.launch">
-		<arg name="depth_registration" value="true" />
-		<arg name="device_id" default="A00363803695038A" />
-	</include>
-	<node pkg="tf" type="static_transform_publisher" name="kinect_position" args=".336 0 .237 .075 -.135 0.025 base_link camera_link 100" />
-	<node pkg="depthimage_to_laserscan" name="depthimage_to_laserscan" type="depthimage_to_laserscan">
-		<remap from="image" to="/camera/depth_registered/image_raw"/>
-		<remap from="scan" to="/scan"/>
-		<param name="output_frame_id" value="camera_depth_frame" />
-		<param name="range_min" value="0.1" />
-	</node>
-
-	<!-- Combine the visual odometry from RTAB-Map with IMU odometry. -->
-	<include file="$(find gudrun)/launch/SLAM/driver_imu.launch"/>
-	<include file="$(find gudrun)/launch/SLAM/odometry_fusion.launch" />
-			 
-	<arg name="frame_id"                default="base_link" />
-	<arg name="rgb_topic"               default="/camera/rgb/image_rect_color" />
-	<arg name="depth_topic"             default="/camera/depth_registered/image_raw" />
-	<arg name="camera_info_topic"       default="/camera/rgb/camera_info" />
-	<arg name="imu_topic"               default="/imu/data" />
-	<arg name="imu_ignore_acc"          default="true" />
-	<arg name="imu_remove_gravitational_acceleration" default="true" />
-
-	<!-- Localization-only mode -->
-	<arg name="localization"      default="false"/>
-	<arg     if="$(arg localization)" name="rtabmap_args"  default=""/>
-	<arg unless="$(arg localization)" name="rtabmap_args"  default="--delete_db_on_start"/>  
-	
-	<group ns="rtabmap">
+    
+    <node pkg="tf" type="static_transform_publisher" name="t265_position" args="-.336 0 -.237 -.075 .135 -.025 t265_link base_link 100" />
+    
+    <node pkg="depthimage_to_laserscan" name="depthimage_to_laserscan" type="depthimage_to_laserscan">
+        <remap from="image" to="/d400/depth/image_rect_raw"/>
+        <remap from="scan" to="/scan"/>
+        <param name="output_frame_id" value="d400_depth_frame" />
+        <param name="range_min" value="0.1" />
+        <param name="scan_height" value="10" />
+    </node>
 
 
-		<!-- Visual Odometry -->
-		<node pkg="rtabmap_ros" type="rgbd_odometry" name="visual_odometry" output="log" args="$(arg rtabmap_args)">
-			<remap from="rgb/image"       to="$(arg rgb_topic)"/>
-			<remap from="depth/image"     to="$(arg depth_topic)"/>
-			<remap from="rgb/camera_info" to="$(arg camera_info_topic)"/>
-			<remap from="odom"            to="/vo"/>
+    <include file="$(find gudrun)/launch/driver_realsense.launch">
+    
+        <arg name="serial_no_camera1"               value="$(arg serial_no_camera1)"/>
+        <arg name="serial_no_camera2"               value="$(arg serial_no_camera2)"/>
+        <arg name="camera1"                         value="$(arg camera1)"/>
+        <arg name="camera2"                         value="$(arg camera2)"/>
+        <arg name="clip_distance"                   value="$(arg clip_distance)"/>
 
-			<param name="frame_id"               type="string" value="$(arg frame_id)"/>
-			<param name="publish_tf"             type="bool"   value="false"/>
-			<param name="publish_null_when_lost" type="bool"   value="true"/>
+    </include>
 
-			<param name="Odom/FillInfoData"      type="string" value="true"/>
-			<param name="Odom/ResetCountdown"    type="string" value="1"/>
-			
-			<!-- 0=SURF 1=SIFT 2=ORB 3=FAST/FREAK 4=FAST/BRIEF 5=GFTT/FREAK 6=GFTT/BRIEF 7=BRISK 8=GFTT/ORB 9=KAZE -->
-			<!-- <param name="Vis/FeatureType"        type="string" value="6"/>  -->
-			
-		</node>
+    <include file="$(find rtabmap_ros)/launch/rtabmap.launch">
 
-		<!-- SLAM -->
-		<node name="rtabmap" pkg="rtabmap_ros" type="rtabmap" output="log" args="$(arg rtabmap_args)">
-			<param name="frame_id"        type="string" value="$(arg frame_id)"/>
- 
-			<rosparam file="$(find gudrun)/config/SLAM.yaml" command="load" />
+            <rosparam file="$(find gudrun)/config/SLAM.yaml" command="load" />
 
-			<remap from="rgb/image"       to="$(arg rgb_topic)"/>
-			<remap from="depth/image"     to="$(arg depth_topic)"/>
-			<remap from="rgb/camera_info" to="$(arg camera_info_topic)"/>
-			<remap from="odom"            to="/odometry/filtered"/>
-
-			<param name="publish_tf"             type="bool"   value="true"/>
-			
-			<!-- localization mode -->
-			<param name="Mem/InitWMWithAllNodes" type="string" value="false"/> 
-			<param     if="$(arg localization)" name="Mem/IncrementalMemory" type="string" value="false"/>
-			<param unless="$(arg localization)" name="Mem/IncrementalMemory" type="string" value="true"/>
-
-		</node>
-
-	</group>
-
-
+            <arg name="rtabmap_args"       value="--delete_db_on_start"/>
+            <arg name="depth_topic"        value="/$(arg camera2)/aligned_depth_to_color/image_raw"/>
+            <arg name="frame_id"           value="$(arg camera2)_link"/>
+            <arg name="visual_odometry"    value="false"/>
+            <arg name="odom_topic"         value="/$(arg camera1)/odom/sample"/>
+            <arg name="rgb_topic"          value="/$(arg camera2)/color/image_raw"/>
+            <arg name="camera_info_topic"  value="/$(arg camera2)/color/camera_info"/>
+            <arg name="queue_size"         value="200"/>
+            <arg name="rviz"               value="$(arg use_rviz)"/>
+            <arg name="rtabmapviz"         value="$(arg use_rtabmapviz)"/>
+    </include>
 </launch>
