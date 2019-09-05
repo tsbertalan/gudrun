@@ -4,6 +4,10 @@
 
     <include file="$(find gudrun)/launch/planning_and_motors.launch" />
 
+    <node pkg="gudrun" name="segmentation_node" type="segmentation_node">
+        <remap from="camera/image" to="/d400/color/image_raw" />
+    </node>
+
     <node pkg="topic_tools" name="camera_throttle" type="throttle" args="messages /d400/color/image_raw 1 /d400_camera_throttled" />
 
     <node pkg="topic_tools" name="depth_throttle" type="throttle" args="messages /d400/depth/image_rect_raw 1 /d400_depth_throttled" />
