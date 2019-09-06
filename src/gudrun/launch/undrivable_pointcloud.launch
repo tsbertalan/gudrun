@@ -1,0 +1,16 @@
+<launch>
+
+    <node pkg="gudrun" name="segmentation_node" type="segmentation_node">
+        <remap from="camera/image" to="/d400/color/image_raw" />
+        <remap from="camera/depth" to="/d400/aligned_depth_to_color/image_raw" />
+        <remap from="camera/camera_info" to="/d400/aligned_depth_to_color/camera_info" />
+    </node>
+
+    <node pkg="nodelet" type="nodelet" name="depth2undrivablepoints"
+        args="standalone depth_image_proc/point_cloud_xyz">
+        <remap from="camera_info" to="/undrivable/depth/camera_info" />
+        <remap from="image_rect" to="/undrivable/depth/image_raw" />
+        <remap from="points" to="undrivable/depth/points" />
+    </node>
+
+</launch>

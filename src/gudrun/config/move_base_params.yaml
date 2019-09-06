@@ -18,7 +18,8 @@ oscillation_distance: 0.0 # If nonzero, we'll stop planning if the robot doesn't
 # base_local_planner: "dwa_local_planner/DWAPlannerROS"
 base_local_planner: "teb_local_planner/TebLocalPlannerROS"
 
-# base_global_planner: "navfn/NavfnROS" #alternatives: global_planner/GlobalPlanner, carrot_planner/CarrotPlanner
+# base_global_planner: "navfn/NavfnROS" 
+# base_global_planner: "carrot_planner/CarrotPlanner"
 base_global_planner: "global_planner/GlobalPlanner"
 
 

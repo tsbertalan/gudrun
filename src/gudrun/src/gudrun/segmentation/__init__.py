@@ -4,11 +4,11 @@ import numpy as np
 
 from time import time
 
-import rospy
-from sensor_msgs.msg import Image
+import rospy, message_filters
+from sensor_msgs.msg import Image, CameraInfo
 
 import cv2
-from cv_bridge import CvBridge, CvBridgeError
+from cv_bridge import CvBridge
 
 
 class Segmenter(object):
@@ -97,34 +97,61 @@ class SegmentationNode(object):
         self._cv_bridge = CvBridge()
 
         rospy.init_node('segmentation_node')
-        rospy.Subscriber('camera/image', Image, self.receive_image)
 
-        self.probabilities_publisher = rospy.Publisher('segmentation_probabilities', Image, queue_size=0)
+        # Recieve all three messages at the same time.
+        color_sub = message_filters.Subscriber('camera/image', Image)
+        depth_sub = message_filters.Subscriber('camera/depth', Image)
+        info_sub = message_filters.Subscriber('camera/camera_info', CameraInfo)
+        ts = message_filters.TimeSynchronizer([color_sub, depth_sub, info_sub], queue_size=1)
+        ts.registerCallback(self.callback)
+
+        self.undrivable_depth_pub = rospy.Publisher('undrivable/depth/image_raw', Image, queue_size=4)
+        self.undrivable_depth_camera_info_pub = rospy.Publisher('undrivable/depth/camera_info', CameraInfo, queue_size=4)
 
         rospy.spin()
 
-    def receive_image(self, image_message):
+    def callback(self, image_message, depth_message, camera_info_message):
 
-        # Don't do any work if no one is paying attention the results.
-        if self.probabilities_publisher.get_num_connections() == 0:
+        # Don't do any work if no one is paying attention to the results.
+        if self.undrivable_depth_pub.get_num_connections() == 0:
             return None
 
-        image = self._cv_bridge.imgmsg_to_cv2(image_message)
-        rospy.loginfo('Image size is %s.' % (image.shape,))
+        color_ar = self._cv_bridge.imgmsg_to_cv2(image_message)
         s = time()
-        probabilities = self.segment(image.astype('float32') / 255.)
-        drivable = probabilities[:, :, 0]
+        probabilities = self.segment(color_ar.astype('float32') / 255.)
+        drivable = probabilities[:, :, 0] > rospy.get_param('~drivable_threshold', 0.5)
         rospy.loginfo('Segmentation took %.4f seconds.' % (time() - s,))
 
-        s = time()
-        response = (drivable * 255).astype('uint8'); encoding = 'mono8'
-        #response = np.dstack([response]*3); encoding = 'rgb8'
-        response = self._cv_bridge.cv2_to_imgmsg(response, encoding)
-        response.header.stamp = rospy.get_rostime()
-        response.header.frame_id = image_message.header.frame_id
+        depth_ar = self._cv_bridge.imgmsg_to_cv2(depth_message)
+        
+        undrivable = np.array(depth_ar).reshape((-1,))
+        undrivable[drivable.ravel()] = 0
+        undrivable = undrivable.reshape(depth_ar.shape)
 
-        self.probabilities_publisher.publish(response)
-        rospy.loginfo('Publishing took %.4f seconds.' % (time() - s,))
+        # npoints = (undrivable > 0).sum()
+        # rospy.loginfo('Raw depth has %d points.' % npoints)
+
+        # drivable_frac = float(drivable.sum()) / drivable.size
+        # rospy.loginfo('%.1f%% of RGB pixels are drivable.' % (drivable_frac * 100,))
+
+        subsample = 6
+        if subsample > 1:
+            xbin = subsample
+            ybin = subsample
+            undrivable = undrivable[::ybin, ::xbin]
+            camera_info_message.height = undrivable.shape[0]
+            camera_info_message.width = undrivable.shape[1]
+            camera_info_message.binning_x = xbin
+            camera_info_message.binning_y = ybin
+
+        # npoints_decimated = (undrivable > 0).sum()
+        # rospy.loginfo('Decimating obstacle cloud to %d points.' % (npoints_decimated,))
+
+        response = self._cv_bridge.cv2_to_imgmsg(undrivable, encoding='16UC1')
+        response.header = depth_message.header
+
+        self.undrivable_depth_pub.publish(response)
+        self.undrivable_depth_camera_info_pub.publish(camera_info_message)
 
 
 if __name__ == '__main__':

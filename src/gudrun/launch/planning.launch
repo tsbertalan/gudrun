@@ -5,7 +5,7 @@
 
 	<remap from="map" to="/rtabmap/grid_map"/>
 
-    <arg name="node_start_delay" default="8.0"/>
+    <arg name="node_start_delay" default="2.0"/>
 
 	<node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen" launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' ">
 		<remap from="cmd_vel" to="$(arg cmd_vel_topic)" />

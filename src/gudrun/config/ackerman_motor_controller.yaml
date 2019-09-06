@@ -27,4 +27,6 @@ pseudovelocity_rate_scaling: 1
 # Traxxas mode 1:
 min_abs_throttle: .08
 
+cmd_angle_instead_rotvel: False
+
 zero_command_timeout: 2.0

@@ -1,10 +1,10 @@
-raytrace_range: 3.0
+raytrace_range: 6.0
 
 # 11 in wide
 #   .279 m
 # 23 in long
 #   .584 m
-footprint: [[ 0.4695,  0.140], [-0.1145,  0.140], [-0.1145, -0.140], [ 0.4695, -0.140]]
+footprint: [[ 0.45,  0.12], [-0.11,  0.12], [-0.11, -0.12], [ 0.45, -0.12]]
 footprint_padding: 0.0
 #robot_radius: ir_of_robot
 

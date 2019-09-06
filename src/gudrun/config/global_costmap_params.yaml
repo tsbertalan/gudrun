@@ -15,7 +15,7 @@ global_costmap:
    - {name: inflation_layer,         type: "costmap_2d::InflationLayer"}
 
   inflation_layer:
-    inflation_radius: 0.025
+    inflation_radius: 0.25
 
   obstacle_layer:
     observation_sources: laser_scan_sensor

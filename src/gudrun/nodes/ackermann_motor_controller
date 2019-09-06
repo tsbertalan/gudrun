@@ -92,7 +92,7 @@ class AckermannMotorController(object):
     def callback(self, message):
         self._command = message.drive.speed
         steering = message.drive.steering_angle
-        if not self._forward:
+        if rospy.get_param('~cmd_angle_instead_rotvel', False) and not self._forward:
             # TODO: Handle this in from the path planning side, if possible, maybe.
             steering *= -1
         self.set_steering(steering)

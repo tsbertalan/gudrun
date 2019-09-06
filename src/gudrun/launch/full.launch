@@ -4,9 +4,7 @@
 
     <include file="$(find gudrun)/launch/planning_and_motors.launch" />
 
-    <node pkg="gudrun" name="segmentation_node" type="segmentation_node">
-        <remap from="camera/image" to="/d400/color/image_raw" />
-    </node>
+    <include file="$(find gudrun)/launch/undrivable_pointcloud.launch" />
 
     <node pkg="topic_tools" name="camera_throttle" type="throttle" args="messages /d400/color/image_raw 1 /d400_camera_throttled" />
 

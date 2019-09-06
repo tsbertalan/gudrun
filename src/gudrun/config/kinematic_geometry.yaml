@@ -15,7 +15,7 @@ meters_per_wheel_diameter: 0.0525
 # How much we should re-emphasize steering considering that the servo is lame.
 angle_scaling: 1.5
 
-
+# TODO: Tune these on open ground, doing simple and clear maneuvers like direction reversals.
 max_vel_x: 0.75
 max_vel_x_backwards: 1.5
 acc_lim_x: 0.5
