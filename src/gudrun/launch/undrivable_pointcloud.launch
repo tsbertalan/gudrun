@@ -8,9 +8,9 @@
 
     <node pkg="nodelet" type="nodelet" name="depth2undrivablepoints"
         args="standalone depth_image_proc/point_cloud_xyz">
-        <remap from="camera_info" to="/undrivable/depth/camera_info" />
-        <remap from="image_rect" to="/undrivable/depth/image_raw" />
-        <remap from="points" to="undrivable/depth/points" />
+        <remap from="camera_info" to="/segmentation/undrivable/depth/camera_info" />
+        <remap from="image_rect" to="/segmentation/undrivable/depth/image_raw" />
+        <remap from="points" to="/segmentation/undrivable/depth/points" />
     </node>
 
 </launch>

@@ -6,8 +6,11 @@
 
     <include file="$(find gudrun)/launch/undrivable_pointcloud.launch" />
 
-    <node pkg="topic_tools" name="camera_throttle" type="throttle" args="messages /d400/color/image_raw 1 /d400_camera_throttled" />
+    <!-- Republish throttled versions of heavy things we might want for CNN training. -->
+    <node pkg="topic_tools" name="camera_throttle" type="throttle" args="messages /d400/color/image_raw 1 /d400/color/image_raw/throttled" />
 
-    <node pkg="topic_tools" name="depth_throttle" type="throttle" args="messages /d400/depth/image_rect_raw 1 /d400_depth_throttled" />
+    <node pkg="topic_tools" name="depth_throttle" type="throttle" args="messages /d400/depth/image_rect_raw 1 /d400/depth/image_rect_raw/throttled" />
+
+    <node pkg="topic_tools" name="rgbd_throttle" type="throttle" args="messages /segmentation/rgbd /segmentation/rgbd/throttled" />
 
 </launch>
