@@ -16,7 +16,8 @@ def get_data_from_bag(bag_file_path):
         '/steering_smoothed',
         '/ackermann_cmd',
         '/tf',
-        '/d400_camera_throttled',
+        '/d400/color/image_raw/throttled',
+        '/d400/depth/image_rect_raw/throttled',
         '/speed_control/measured',
     ]
 
@@ -66,7 +67,7 @@ def get_data_from_bag(bag_file_path):
     }
 
     data = {
-        # '/d400_camera_throttled'
+        # '/d400/color/image_raw/throttled'
         # header: 
         #   seq: 3359
         #   stamp: 
@@ -79,14 +80,21 @@ def get_data_from_bag(bag_file_path):
         # is_bigendian: 0
         # step: 1920
         # data: [ ... truncated ... ]
-        '/d400_camera_throttled': {
+        '/d400/color/image_raw/throttled': {
             'header': deepcopy(header_template),
             'height': None,
             'width': None,
             'encoding': None,
             'data': np.ndarray,
         },
+
+        '/d400/depth/image_rect_raw/throttled': {
+            'header': deepcopy(header_template),
+            'height': None, 'width': None, 'encoding': None, 'data': np.ndarray,
+        },
+
         '/tf': [],
+
 
         # '/steering_smoothed'
         # rospy.Time[1567452558990950896]
@@ -169,7 +177,7 @@ def get_data_from_bag(bag_file_path):
                 # print('Creating a', type(value[-1]))
                 last = value[-1]
                 if isinstance(last, np.ndarray):
-                    if topic == '/d400_camera_throttled':
+                    if topic == '/d400/color/image_raw/throttled':
                         datum = cv_bridge.imgmsg_to_cv2(msg)
                     t = np.asarray
                 else:
@@ -218,7 +226,9 @@ np.load = lambda *a,**k: np_load_old(*a, allow_pickle=True, **k)
 
 if __name__ == '__main__':
     from glob import glob
-    folder = '/home/tsbertalan/Dropbox/data/gudrun/september_2/'
+    from sys import argv
+    # folder = '/home/tsbertalan/Dropbox/data/gudrun/september_2/'
+    folder = argv[1]
     paths = glob(folder + '*.bag')
     for path in tqdm.tqdm(paths, unit='bag'):
         import os
@@ -229,7 +239,7 @@ if __name__ == '__main__':
 
 
         data = np.load(path + '.npz')['arr_0'].reshape((1,))[0]
-        images = data['/d400_camera_throttled']['data']
+        images = data['/d400/color/image_raw/throttled']['data']
         for i, image in enumerate(tqdm.tqdm(images, unit='images', desc='PNG files')):
             from os.path import join, basename, splitext
             imname = ''.join(list(splitext(basename(path))[:-1]) + ['-%05d' % i, '.png'])
