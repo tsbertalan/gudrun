@@ -51,7 +51,7 @@ TebLocalPlannerROS:
 
     
   # Obstacles
-  min_obstacle_dist: 0.15  # Should be the robot's "radius" if using footprint_model: line, else much smaller.
+  min_obstacle_dist: 0.13  # Should be the robot's "radius" if using footprint_model: line, else much smaller.
   inflation_dist: 0.17 # Only takes effect if larger than min_obstacle_dist
   legacy_obstacle_association: False
   include_dynamic_obstacles: True
@@ -122,7 +122,7 @@ TebLocalPlannerROS:
   #weight_kinematics_nh: 1000
 
   # Optimization weight for forcing the robot to choose only forward directions (positive transl. velocities). A small weight (e.g. 1.0) still allows driving backwards. 
-  weight_kinematics_forward_drive: 4.0
+  weight_kinematics_forward_drive: 1.0
 
   # Optimization weight for enforcing a minimum turning radius (only for carlike robots). 
   #weight_kinematics_turning_radius: 1

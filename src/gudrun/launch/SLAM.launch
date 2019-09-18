@@ -38,7 +38,9 @@
 
             <rosparam file="$(find gudrun)/config/SLAM.yaml" command="load" />
 
-            <arg name="rtabmap_args"       value="--delete_db_on_start"/>
+            <!-- Note added space between - and - before delte (remove before uncommenting; 
+            add to avoid breaking the comment): -->
+            <!-- <arg name="rtabmap_args"       value="- -delete_db_on_start"/> -->
             <arg name="depth_topic"        value="/$(arg camera2)/aligned_depth_to_color/image_raw"/>
             <arg name="frame_id"           value="$(arg camera2)_link"/>
             <arg name="visual_odometry"    value="false"/>

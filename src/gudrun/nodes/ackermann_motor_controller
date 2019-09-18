@@ -118,7 +118,6 @@ class AckermannMotorController(object):
 
         if np.sign(vt) != np.sign(self.pid.setpoint):
             new_integral_term = 0
-            rospy.loginfo('Direction command switched; changing integral term from %s to %s.' % (self.pid._integral, new_integral_term))
             self.pid._integral = new_integral_term
         self.pid.setpoint = vt
 

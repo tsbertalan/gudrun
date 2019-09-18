@@ -20,8 +20,8 @@ max_vel_x: 0.75
 max_vel_x_backwards: 1.5
 acc_lim_x: 0.5
 
-# max_vel_theta: 0.3
-acc_lim_theta: 0.25
+max_vel_theta: 1
+acc_lim_theta: 5
 
 # Minimum turning diameter measured as 1.65984 with slick plastic wheels.
 # Yeah, basically confirmed also with stock rubber wheels.
