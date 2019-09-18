@@ -10,12 +10,12 @@ from sensor_msgs.msg import Image, CameraInfo
 import cv2
 from cv_bridge import CvBridge
 
+_here = dirname(__file__)
 
 class Segmenter(object):
 
     def __init__(self):
 
-        self._here = dirname(__file__)
 
         rospy.loginfo('Importing tensorflow for segmentation ...')
         import tensorflow as tf
@@ -24,7 +24,7 @@ class Segmenter(object):
         self.sess = tf.Session()
 
         # Load the graph definition (tensors and variables).
-        tf.train.import_meta_graph(join(self._here, 'Unet_model.ckpt.meta'))
+        tf.train.import_meta_graph(join(_here, 'Unet_model.ckpt.meta'))
         graph = tf.get_default_graph()
 
         input_tensor = graph.get_tensor_by_name('input_tensor:0')
@@ -32,7 +32,7 @@ class Segmenter(object):
 
         # Load the weights (variable values).
         saver = tf.train.Saver()
-        saver.restore(self.sess, join(self._here, 'Unet_model.ckpt'))
+        saver.restore(self.sess, join(_here, 'Unet_model.ckpt'))
 
         def predict(x):
             return self.sess.run(probabilities, feed_dict={input_tensor: x})
@@ -52,7 +52,7 @@ class Segmenter(object):
         import matplotlib.pyplot as plt
 
         # Load the data.
-        X = np.load(join(self._here, 'X12.npz'))['X']
+        X = np.load(join(_here, 'X12.npz'))['X']
         print('Data shape:', X.shape)
 
         from time import time
@@ -78,7 +78,7 @@ class Segmenter(object):
         fig.tight_layout()
         fig.subplots_adjust(wspace=0, hspace=0)
 
-        fig.savefig(join(self._here, 'predictions12.png'))
+        fig.savefig(join(_here, 'predictions12.png'))
 
 
 class SegmentationNode(object):
@@ -149,7 +149,7 @@ class SegmentationNode(object):
             self.drivable_prob_camera_info_pub.publish(camera_info_message)
 
         if depth_subbed:
-            drivable = drivable_probabilities > rospy.get_param('~drivable_threshold', 0.5)
+            drivable = drivable_probabilities > rospy.get_param('~drivable_threshold', 0.4)
 
             depth_ar = self._cv_bridge.imgmsg_to_cv2(depth_message)
             

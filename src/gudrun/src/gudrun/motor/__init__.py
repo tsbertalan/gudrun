@@ -216,7 +216,6 @@ class Car(object):
     def throttle(self, fraction):
         rospy_log = lambda *a, **kw: None
 
-        rospy_log('INFO', '%s got throttle fraction %s.' % (self, fraction))
         if not getattr(self, 'initialized', False):
             return
 
@@ -243,8 +242,6 @@ class Car(object):
     @steering.setter
     def steering(self, fraction):
         rospy_log = lambda *a, **kw: None
-
-        rospy_log('INFO', '%s got steering fraction of %s.' % (self, fraction))
 
         if not getattr(self, 'initialized', False):
             return
